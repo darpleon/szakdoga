@@ -1,7 +1,10 @@
-#include <iostream>
-#include <format>
+#include "Context.hpp"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    Context context;
+
+    while (context.window_open()) {
+        context.update();
+    }
 }

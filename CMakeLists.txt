@@ -5,8 +5,9 @@ project(szakdoga)
 add_executable(
   main
   src/main.cpp
+  src/Context.cpp
 )
 include_directories(src)
-# target_link_libraries(main glfw)
+target_link_libraries(main glfw)
 
 set_property (TARGET main PROPERTY CXX_STANDARD 20)
