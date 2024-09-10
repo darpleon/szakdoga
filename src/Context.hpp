@@ -1,6 +1,7 @@
 #include <GLFW/glfw3.h>
 
-class Context {
+class Context
+{
 public:
     Context();
     ~Context();
