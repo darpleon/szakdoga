@@ -1,0 +1,24 @@
+#pragma once
+
+#include <map>
+class Variable
+{
+public:
+    Variable() :
+        id(id_counter++)
+    {}
+private:
+    static unsigned int id_counter;
+    unsigned int id;
+};
+
+class PowerPermutation
+{
+private:
+    std::map<Variable, unsigned int> monomials;
+};
+
+PowerPermutation operator^(const Variable& x, unsigned int k)
+{
+
+}
