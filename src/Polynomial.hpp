@@ -1,9 +1,11 @@
 #pragma once
 
+#include <iostream>
 #include <map>
 #include <ostream>
+#include <unordered_map>
 
-unsigned int hash(unsigned int x) {
+unsigned int hash_uint(unsigned int x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = ((x >> 16) ^ x) * 0x45d9f3b;
     x = (x >> 16) ^ x;
@@ -22,9 +24,9 @@ public:
         return id;
     }
 
-    bool operator<(const Variable x) const
+    bool operator==(const Variable x) const
     {
-        return this->id < x.id;
+        return this->id == x.id;
     }
 private:
     static unsigned int id_counter;
@@ -39,10 +41,20 @@ inline std::ostream& operator<<(std::ostream& os, Variable x)
     return os;
 }
 
+template<>
+struct std::hash<Variable>
+{
+    size_t operator()(Variable x) const
+    {
+        cout << "hashin variable\n";
+        return x.get_id();
+    }
+};
+
 class PowerPermutation
 {
 public:
-    PowerPermutation(const std::map<Variable, unsigned int>& m) :
+    PowerPermutation(const std::unordered_map<Variable, unsigned int>& m) :
         monomials{m}
     {}
     
@@ -50,27 +62,58 @@ public:
         monomials{init_list}
     {}
 
-    const std::map<Variable, unsigned int>& get_monomials() const
+    const std::unordered_map<Variable, unsigned int>& get_monomials() const
     {
         return monomials;
     }
 
-    // a < b if a has fewer variables
-    //
-    bool operator<(const PowerPermutation& p) const
+    bool operator==(const PowerPermutation& p) const
     {
-        if (this->monomials.size() < p.monomials.size()) {
-            return true;
+        if (this->monomials.size() != p.monomials.size()) {
+            return false;
         }
-
         for (const auto& [variable, power] : monomials) {
-
+            if (!p.monomials.contains(variable)) {
+                return false;
+            }
+            if (p.monomials.at(variable) != power) {
+                return false;
+            }
         }
-        return false;
+        return true;
     }
 private:
-    std::map<Variable, unsigned int> monomials;
+    std::unordered_map<Variable, unsigned int> monomials;
 };
+
+template<>
+struct std::hash<PowerPermutation>
+{
+    size_t operator()(const PowerPermutation& pp) const
+    {
+        std::cout << "hashin\n";
+        size_t seed = pp.get_monomials().size();
+        for (auto [variable, power] : pp.get_monomials()) {
+            unsigned int v = hash_uint(variable.get_id());
+            unsigned int p = hash_uint(power);
+            seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= p + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+
+template <typename T>
+T zero();
+
+template <typename T>
+T one();
+
+template <>
+inline double zero() {return 0.0;}
+
+template <>
+inline double one() {return 1.0;}
 
 inline std::ostream& operator<<(std::ostream& os, PowerPermutation p)
 {
@@ -85,9 +128,14 @@ inline PowerPermutation operator^(const Variable& x, unsigned int k)
     return PowerPermutation{ {x, k} };
 }
 
-template <typename coeff_type>
-class PolynomialTerm
+template <typename coeff_type = double>
+class Polynomial
 {
+public:
+    Polynomial(PowerPermutation pp)
+    {
+        terms[pp] = one<coeff_type>();
+    }
 private:
-    // std::map<
+    std::unordered_map<PowerPermutation, coeff_type> terms;
 };

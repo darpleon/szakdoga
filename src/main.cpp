@@ -22,6 +22,10 @@ int main()
     };
 
     std::cout << pp << "\n";
+
+    Polynomial<double> poly{pp};
+
+
     // Context context{};
     // GLGraphics graphics{};
     //
