@@ -3,6 +3,8 @@
 #include "Polynomial.hpp"
 #include <format>
 
+#include "PowerPermutation.hpp"
+
 int main()
 {
     Variable x;

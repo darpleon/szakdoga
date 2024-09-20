@@ -1,4 +1,7 @@
+#pragma once
+
 #include <ostream>
+
 class Variable
 {
 public:
@@ -12,12 +15,7 @@ private:
     unsigned int id;
 };
 
-
-inline std::ostream& operator<<(std::ostream& os, Variable x)
-{
-    os << "$" << x.get_id();
-    return os;
-}
+std::ostream& operator<<(std::ostream& os, Variable x);
 
 template<>
 struct std::hash<Variable>
