@@ -46,7 +46,6 @@ struct std::hash<Variable>
 {
     size_t operator()(Variable x) const
     {
-        cout << "hashin variable\n";
         return x.get_id();
     }
 };
@@ -54,6 +53,13 @@ struct std::hash<Variable>
 class PowerPermutation
 {
 public:
+    PowerPermutation()
+    {}
+
+    PowerPermutation(const PowerPermutation& pp) :
+        monomials{pp.monomials}
+    {}
+
     PowerPermutation(const std::unordered_map<Variable, unsigned int>& m) :
         monomials{m}
     {}
@@ -65,6 +71,20 @@ public:
     const std::unordered_map<Variable, unsigned int>& get_monomials() const
     {
         return monomials;
+    }
+
+    PowerPermutation operator*(const PowerPermutation& pp) const
+    {
+        PowerPermutation result{*this};
+        for (const auto& [variable, power] : pp.monomials) {
+            if (monomials.contains(variable)) {
+                result.monomials[variable] += power;
+            }
+            else {
+                result.monomials[variable] = power;
+            }
+        }
+        return result;
     }
 
     bool operator==(const PowerPermutation& p) const
@@ -91,7 +111,6 @@ struct std::hash<PowerPermutation>
 {
     size_t operator()(const PowerPermutation& pp) const
     {
-        std::cout << "hashin\n";
         size_t seed = pp.get_monomials().size();
         for (auto [variable, power] : pp.get_monomials()) {
             unsigned int v = hash_uint(variable.get_id());
@@ -117,9 +136,16 @@ inline double one() {return 1.0;}
 
 inline std::ostream& operator<<(std::ostream& os, PowerPermutation p)
 {
+    bool first = true;
+    os << "(";
     for (const auto& [variable, power] : p.get_monomials()) {
+        if (!first) {
+            os << " ";
+        }
         os << variable << "^" << power;
+        first = false;
     }
+    os << ")";
     return os;
 }
 
@@ -132,10 +158,75 @@ template <typename coeff_type = double>
 class Polynomial
 {
 public:
+    Polynomial()
+    {}
+
     Polynomial(PowerPermutation pp)
     {
         terms[pp] = one<coeff_type>();
     }
+
+    Polynomial(std::initializer_list<std::pair<const PowerPermutation, coeff_type>> init_list) :
+        terms{init_list}
+    {}
+
+    const std::unordered_map<PowerPermutation, coeff_type>& get_terms() const
+    {
+        return terms;
+    }
+
+    Polynomial operator+(const Polynomial& p) const
+    {
+        Polynomial result{*this};
+        for (const auto& [permutation, coeff] : p.get_terms()) {
+            if (terms.contains(permutation)) {
+                result.terms[permutation] += coeff;
+            }
+            else {
+                result.terms[permutation] = coeff;
+            }
+        }
+        return result;
+    }
+
+    Polynomial operator-() const
+    {
+        Polynomial result;
+        for (const auto& [permutation, coeff] : terms) {
+            result.terms[permutation] = -coeff;
+        }
+    }
+
+    // template <typename input_type = double>
+    // input_type operator()(std::initializer_list<std::pair<const Variable, input_type>> init_list) {
+    //     std::unordered_map<Variable, input_type> inputs{init_list};
+    //     input_type result = zero<input_type>();
+    //     for (const auto& [permutation, coeff] : terms) {
+    //
+    //     }
+    //     return result;
+    // }
+
 private:
     std::unordered_map<PowerPermutation, coeff_type> terms;
 };
+
+template <typename coeff_type>
+inline std::ostream& operator<<(std::ostream& os, Polynomial<coeff_type> p)
+{
+    bool first = true;
+    for (const auto& [pp, coeff] : p.get_terms()) {
+        if (!first) {
+            os << " + ";
+        }
+        os << pp << "*" << coeff;
+        first = false;
+    }
+    return os;
+}
+
+template <typename coeff_type>
+Polynomial<coeff_type> operator*(const PowerPermutation& pp, coeff_type coeff)
+{
+    return Polynomial<coeff_type>{{pp, coeff}};
+}

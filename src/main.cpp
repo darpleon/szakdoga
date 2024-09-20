@@ -10,20 +10,20 @@ int main()
 
     std::cout << (x^7) << "\n";
 
-    std::cout << std::format("size of uint:{}\n", sizeof(unsigned int));
-
     Variable y;
     Variable z;
-    PowerPermutation pp
-    {
-        {x, 2},
-        {y, 1},
-        {z, 3}
-    };
+    PowerPermutation pp = (x^2)*(y^1)*(z^3);
+    // {
+    //     {x, 2},
+    //     {y, 1},
+    //     {z, 3}
+    // };
 
     std::cout << pp << "\n";
 
-    Polynomial<double> poly{pp};
+    Polynomial<double> poly = pp * 3.71 + ((x^1)*(y^3) * 2.0);
+
+    std::cout << "poly: " << poly << "\n";
 
 
     // Context context{};
