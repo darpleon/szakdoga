@@ -8,6 +8,7 @@ add_executable(
   src/Context.cpp
   src/glad.c
   src/GLGraphics.cpp
+  src/Variable.cpp
 )
 include_directories(src)
 target_link_libraries(main glfw)

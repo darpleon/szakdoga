@@ -1,9 +1,12 @@
 #pragma once
 
+#include "Variable.hpp"
+
 #include <iostream>
 #include <map>
 #include <ostream>
 #include <unordered_map>
+#include <vector>
 
 unsigned int hash_uint(unsigned int x) {
     x = ((x >> 16) ^ x) * 0x45d9f3b;
@@ -11,44 +14,6 @@ unsigned int hash_uint(unsigned int x) {
     x = (x >> 16) ^ x;
     return x;
 }
-
-class Variable
-{
-public:
-    Variable() :
-        id(id_counter++)
-    {}
-
-    unsigned int get_id() const
-    {
-        return id;
-    }
-
-    bool operator==(const Variable x) const
-    {
-        return this->id == x.id;
-    }
-private:
-    static unsigned int id_counter;
-    unsigned int id;
-};
-
-unsigned int Variable::id_counter = 0;
-
-inline std::ostream& operator<<(std::ostream& os, Variable x)
-{
-    os << "$" << x.get_id();
-    return os;
-}
-
-template<>
-struct std::hash<Variable>
-{
-    size_t operator()(Variable x) const
-    {
-        return x.get_id();
-    }
-};
 
 class PowerPermutation
 {
@@ -197,15 +162,26 @@ public:
         }
     }
 
-    // template <typename input_type = double>
-    // input_type operator()(std::initializer_list<std::pair<const Variable, input_type>> init_list) {
-    //     std::unordered_map<Variable, input_type> inputs{init_list};
-    //     input_type result = zero<input_type>();
-    //     for (const auto& [permutation, coeff] : terms) {
-    //
-    //     }
-    //     return result;
-    // }
+    template <typename input_type = double>
+    input_type operator()(std::initializer_list<std::pair<const Variable, input_type>> init_list) {
+        std::unordered_map<Variable, std::vector<input_type>> values;
+        for (auto [variable, value] : init_list) {
+            values[variable].push_back(one<input_type>());
+            values[variable].push_back(value);
+        }
+        input_type result = zero<input_type>();
+        for (const auto& [permutation, coeff] : terms) {
+            input_type product = one<input_type>();
+            for (auto [variable, power] : permutation.get_monomials()) {
+                while (power >= values[variable].size()) {
+                    values[variable].push_back(values[variable].back() * values[variable][1]);
+                }
+                product *= values[variable][power];
+            }
+            result += product * coeff;
+        }
+        return result;
+    }
 
 private:
     std::unordered_map<PowerPermutation, coeff_type> terms;
