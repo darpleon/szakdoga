@@ -21,6 +21,8 @@ public:
     bool operator==(const PowerPermutation& p) const;
 private:
     std::unordered_map<Variable, unsigned int> monomials;
+
+    void discard_constants();
 };
 
 template<>

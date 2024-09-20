@@ -9,11 +9,15 @@ PowerPermutation::PowerPermutation(const PowerPermutation& pp) :
 
 PowerPermutation::PowerPermutation(const std::unordered_map<Variable, unsigned int>& m) :
     monomials{m}
-{}
+{
+    discard_constants();
+}
 
 PowerPermutation::PowerPermutation(std::initializer_list<std::pair<const Variable, unsigned int>> init_list) :
     monomials{init_list}
-{}
+{
+    discard_constants();
+}
 
 const std::unordered_map<Variable, unsigned int>& PowerPermutation::get_monomials() const
 {
@@ -50,6 +54,15 @@ bool PowerPermutation::operator==(const PowerPermutation& p) const
     return true;
 }
 
+void PowerPermutation::discard_constants()
+{
+    std::erase_if(monomials, [](const auto& monomial)
+    {
+        const auto& [variable, power] = monomial;
+        return power == 0;
+    });
+}
+
 PowerPermutation operator^(const Variable& x, unsigned int k)
 {
     return PowerPermutation{ {x, k} };
@@ -65,6 +78,9 @@ std::ostream& operator<<(std::ostream& os, PowerPermutation p)
         }
         os << variable << "^" << power;
         first = false;
+    }
+    if (p.get_monomials().empty()) {
+        os << "1";
     }
     os << ")";
     return os;

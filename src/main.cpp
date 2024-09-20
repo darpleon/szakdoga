@@ -23,18 +23,18 @@ int main()
 
     std::cout << pp << "\n";
 
-    Polynomial<double> poly = pp * 3.71 + (x^1)*(y^3) * 2.0;
+    Polynomial<double> poly = pp * 3.71 + (x^1)*(y^3)*(z^0) * 2.0;
 
     std::cout << "poly: " << poly << "\n";
 
-    double result = poly(
-    {
+    double result = poly({
         {x, 2.0},
         {y, 3.0},
-        {z, 0.5}
-    });
+        {z, 0.5}});
 
     std::cout << std::format("result is: {}\n", result);
+
+    std::cout << (x^0) << "\n";
 
 
     // Context context{};
