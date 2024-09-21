@@ -35,6 +35,8 @@ public:
 
     Polynomial operator+(const Polynomial& p) const;
 
+    Polynomial operator*(const Polynomial& p) const;
+
     Polynomial operator-() const;
 
     template <typename input_type = double>
@@ -82,6 +84,13 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator+(const Polynomial& p) co
             result.terms[permutation] = coeff;
         }
     }
+    return result;
+}
+
+template <typename coeff_type>
+Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const Polynomial<coeff_type>& p) const
+{
+    Polynomial result;
     return result;
 }
 
