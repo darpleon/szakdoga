@@ -20,7 +20,7 @@ PowerPermutation::PowerPermutation(std::initializer_list<std::pair<const Variabl
 }
 
 PowerPermutation::PowerPermutation(Variable x) :
-    monomials{ {x, 1} }
+    monomials{{x, 1}}
 {}
 
 const std::unordered_map<Variable, unsigned int>& PowerPermutation::get_monomials() const
@@ -47,16 +47,16 @@ PowerPermutation PowerPermutation::operator*(Variable x) const
     return *this * PowerPermutation{x};
 }
 
-bool PowerPermutation::operator==(const PowerPermutation& p) const
+bool PowerPermutation::operator==(const PowerPermutation& pp) const
 {
-    if (this->monomials.size() != p.monomials.size()) {
+    if (this->monomials.size() != pp.monomials.size()) {
         return false;
     }
     for (const auto& [variable, power] : monomials) {
-        if (!p.monomials.contains(variable)) {
+        if (!pp.monomials.contains(variable)) {
             return false;
         }
-        if (p.monomials.at(variable) != power) {
+        if (pp.monomials.at(variable) != power) {
             return false;
         }
     }
@@ -72,23 +72,36 @@ void PowerPermutation::discard_constants()
     });
 }
 
-PowerPermutation operator^(const Variable& x, unsigned int k)
+PowerPermutation operator^(Variable x, unsigned int k)
 {
-    return PowerPermutation{ {x, k} };
+    return PowerPermutation{{x, k}};
 }
 
-std::ostream& operator<<(std::ostream& os, PowerPermutation p)
+PowerPermutation operator*(Variable x, Variable y)
+{
+    if (x == y) {
+        return x^2;
+    }
+    return PowerPermutation {{x, 1}, {y, 1}};
+}
+
+PowerPermutation operator*(Variable x, PowerPermutation pp)
+{
+    return pp * x;
+}
+
+std::ostream& operator<<(std::ostream& os, PowerPermutation pp)
 {
     bool first = true;
     os << "(";
-    for (const auto& [variable, power] : p.get_monomials()) {
+    for (const auto& [variable, power] : pp.get_monomials()) {
         if (!first) {
             os << " ";
         }
         os << variable << "^" << power;
         first = false;
     }
-    if (p.get_monomials().empty()) {
+    if (pp.get_monomials().empty()) {
         os << "1";
     }
     os << ")";
