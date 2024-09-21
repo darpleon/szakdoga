@@ -19,6 +19,10 @@ PowerPermutation::PowerPermutation(std::initializer_list<std::pair<const Variabl
     discard_constants();
 }
 
+PowerPermutation::PowerPermutation(Variable x) :
+    monomials{ {x, 1} }
+{}
+
 const std::unordered_map<Variable, unsigned int>& PowerPermutation::get_monomials() const
 {
     return monomials;
@@ -36,6 +40,11 @@ PowerPermutation PowerPermutation::operator*(const PowerPermutation& pp) const
         }
     }
     return result;
+}
+
+PowerPermutation PowerPermutation::operator*(Variable x) const
+{
+    return *this * PowerPermutation{x};
 }
 
 bool PowerPermutation::operator==(const PowerPermutation& p) const
