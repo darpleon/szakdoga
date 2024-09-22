@@ -57,6 +57,8 @@ public:
         const Variable, const input_type&>> init_list) const;
 
     Polynomial derivative(Variable x) const;
+
+    std::vector<Polynomial> derivative(std::initializer_list<Variable> variables) const;
 private:
 
     std::unordered_map<PowerPermutation, coeff_type> terms;
@@ -261,6 +263,17 @@ Polynomial<coeff_type> Polynomial<coeff_type>::derivative(Variable x) const
             monomials[x] -= 1;
             result += {{monomials}, c_result};
         }
+    }
+    return result;
+}
+
+template <typename coeff_type>
+std::vector<Polynomial<coeff_type>> Polynomial<coeff_type>::derivative(
+    std::initializer_list<Variable> variables) const
+{
+    std::vector<Polynomial> result{};
+    for (Variable x : variables) {
+        result.push_back(derivative(x));
     }
     return result;
 }

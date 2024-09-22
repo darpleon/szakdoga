@@ -150,9 +150,15 @@ TEST_F(PolynomialTest, EvaluatePolynomial)
 
 TEST_F(PolynomialTest, Derivative)
 {
-    Polynomial<double> deriv = p1.derivative(x);
-    Polynomial<double> ref{
+    std::vector<Polynomial<double>> derivatives = p1.derivative({x, y, z});
+    Polynomial<double> ref_x{
 	{{{x, 2}, {y, 2}}, 6.0},
 	{{{z, 4}}, 3.0}};
-    EXPECT_EQ(deriv, ref);
+    Polynomial<double> ref_y{
+	{{{x, 3}, {y, 1}}, 4.0}};
+    Polynomial<double> ref_z{
+	{{{z, 3}, {x, 1}}, 12.0}};
+    EXPECT_EQ(derivatives[0], ref_x);
+    EXPECT_EQ(derivatives[1], ref_y);
+    EXPECT_EQ(derivatives[2], ref_z);
 }
