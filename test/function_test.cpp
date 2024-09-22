@@ -147,3 +147,12 @@ TEST_F(PolynomialTest, EvaluatePolynomial)
     Polynomial<double> result = outer.evaluate<Polynomial<double>>({{x, inner}});
     EXPECT_EQ(result, ref);
 }
+
+TEST_F(PolynomialTest, Derivative)
+{
+    Polynomial<double> deriv = p1.derivative(x);
+    Polynomial<double> ref{
+	{{{x, 2}, {y, 2}}, 6.0},
+	{{{z, 4}}, 3.0}};
+    EXPECT_EQ(deriv, ref);
+}

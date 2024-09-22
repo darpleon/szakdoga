@@ -4,7 +4,6 @@
 #include "Variable.hpp"
 #include "PowerPermutation.hpp"
 
-#include <iostream>
 #include <ostream>
 #include <unordered_map>
 #include <vector>
@@ -28,6 +27,8 @@ public:
     bool operator==(const Polynomial& p) const;
 
     Polynomial operator*(const coeff_type& multiplier);
+
+    Polynomial operator+(const coeff_type& constant);
 
     void operator+=(std::pair<const PowerPermutation&, coeff_type> term);
 
@@ -55,13 +56,12 @@ public:
     result_type<input_type> operator()(std::initializer_list<std::pair<
         const Variable, const input_type&>> init_list) const;
 
+    Polynomial derivative(Variable x) const;
 private:
 
     std::unordered_map<PowerPermutation, coeff_type> terms;
 
     void discard_zeros();
-
-    void add_term(const PowerPermutation& pp, coeff_type coeff);
 };
 
 template <typename coeff_type>
@@ -124,7 +124,6 @@ bool Polynomial<coeff_type>::operator==(const Polynomial& p) const
     }
     for (const auto& [permutation, coeff] : terms) {
         if (!p.terms.contains(permutation)) {
-            std::cout << permutation << "\n";
             return false;
         }
         if (p.terms.at(permutation) != coeff) {
@@ -141,6 +140,14 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const coeff_type& multi
     for (auto& [permutation, coeff] : result.terms) {
         coeff *= multiplier;
     }
+    return result;
+}
+
+template <typename coeff_type>
+Polynomial<coeff_type> Polynomial<coeff_type>::operator+(const coeff_type& constant)
+{
+    Polynomial result{*this};
+    result += {{}, constant};
     return result;
 }
 
@@ -244,14 +251,18 @@ void Polynomial<coeff_type>::discard_zeros()
 }
 
 template <typename coeff_type>
-void Polynomial<coeff_type>::add_term(const PowerPermutation& permutation, coeff_type coeff)
+Polynomial<coeff_type> Polynomial<coeff_type>::derivative(Variable x) const
 {
-    if (terms.contains(permutation)) {
-        terms[permutation] += coeff;
+    Polynomial result{};
+    for (const auto& [permutation, coeff] : terms) {
+        if (permutation.get_monomials().contains(x)) {
+            std::unordered_map<Variable, unsigned int> monomials = permutation.get_monomials();
+            coeff_type c_result = coeff * monomials[x];
+            monomials[x] -= 1;
+            result += {{monomials}, c_result};
+        }
     }
-    else {
-        terms[permutation] = coeff;
-    }
+    return result;
 }
 
 template <typename coeff_type>
