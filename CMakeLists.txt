@@ -11,7 +11,7 @@ add_library(
   function
   src/Variable.cpp
   src/PowerPermutation.cpp
-  src/Identity.cpp
+  src/math_utility.cpp
   # src/Polynomial.hpp
 )
 

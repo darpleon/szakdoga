@@ -1,12 +1,14 @@
 #pragma once
 
-#include "Identity.hpp"
+#include "math_utility.hpp"
 #include "Variable.hpp"
 #include "PowerPermutation.hpp"
 
+#include <iostream>
 #include <ostream>
 #include <unordered_map>
 #include <vector>
+
 
 template <typename coeff_type = double>
 class Polynomial
@@ -27,16 +29,34 @@ public:
 
     Polynomial operator*(const coeff_type& multiplier);
 
+    void operator+=(std::pair<const PowerPermutation&, coeff_type> term);
+
+    void operator+=(const Polynomial& p);
+
     Polynomial operator+(const Polynomial& p) const;
+
+    void operator*=(const Polynomial& p);
 
     Polynomial operator*(const Polynomial& p) const;
 
     Polynomial operator-() const;
 
+    template <typename input_type>
+    using result_type = sum_type<product_type<
+                                     product_type<input_type>,
+                                     coeff_type>>;
+                            
+
     template <typename input_type = double>
-    input_type operator()(std::initializer_list<std::pair<
-        const Variable, input_type>> init_list) const;
+    result_type<input_type> evaluate(std::initializer_list<std::pair<
+        const Variable, const input_type&>> init_list) const;
+
+    template <typename input_type = double>
+    result_type<input_type> operator()(std::initializer_list<std::pair<
+        const Variable, const input_type&>> init_list) const;
+
 private:
+
     std::unordered_map<PowerPermutation, coeff_type> terms;
 
     void discard_zeros();
@@ -104,6 +124,7 @@ bool Polynomial<coeff_type>::operator==(const Polynomial& p) const
     }
     for (const auto& [permutation, coeff] : terms) {
         if (!p.terms.contains(permutation)) {
+            std::cout << permutation << "\n";
             return false;
         }
         if (p.terms.at(permutation) != coeff) {
@@ -124,24 +145,48 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const coeff_type& multi
 }
 
 template <typename coeff_type>
+void Polynomial<coeff_type>::operator+=(std::pair<const PowerPermutation&, coeff_type> term)
+{
+    const auto& [permutation, coeff] = term;
+    if (terms.contains(permutation)) {
+        terms[permutation] += coeff;
+    }
+    else {
+        terms[permutation] = coeff;
+    }
+}
+
+template <typename coeff_type>
+void Polynomial<coeff_type>::operator+=(const Polynomial& p)
+{
+    for (const std::pair<PowerPermutation, coeff_type>& term : p.terms) {
+        *this += term;
+    }
+}
+
+template <typename coeff_type>
 Polynomial<coeff_type> Polynomial<coeff_type>::operator+(const Polynomial& p) const
 {
     Polynomial result{*this};
-    for (const auto& [permutation, coeff] : p.get_terms()) {
-        result.add_term(permutation, coeff);
-    }
+    result += p;
     return result;
+}
+
+template <typename coeff_type>
+void Polynomial<coeff_type>::operator*=(const Polynomial<coeff_type>& p)
+{
+    *this = *this * p;
 }
 
 template <typename coeff_type>
 Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const Polynomial<coeff_type>& p) const
 {
-    Polynomial result;
+    Polynomial result{};
     for (const auto& [pp_left, c_left] : terms) {
         for (const auto& [pp_right, c_right] : p.terms) {
             PowerPermutation pp_product = pp_left * pp_right;
             coeff_type c_product = c_left * c_right;
-            result.add_term(pp_product, c_product);
+            result += {pp_product, c_product};
         }
     }
     return result;
@@ -158,17 +203,17 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator-() const
 
 template <typename coeff_type>
 template <typename input_type>
-input_type Polynomial<coeff_type>::operator()(std::initializer_list<std::pair<
-    const Variable, input_type>> init_list) const
+Polynomial<coeff_type>::result_type<input_type> Polynomial<coeff_type>::evaluate(
+    std::initializer_list<std::pair<const Variable, const input_type&>> inputs) const
 {
-    std::unordered_map<Variable, std::vector<input_type>> values;
-    for (auto [variable, value] : init_list) {
-        values[variable].push_back(I<input_type>::one);
+    std::unordered_map<Variable, std::vector<product_type<input_type>>> values;
+    for (const auto& [variable, value] : inputs) {
+        values[variable].push_back(I<product_type<input_type>>::one);
         values[variable].push_back(value);
     }
-    input_type result = I<input_type>::zero;
+    result_type<input_type> result = I<result_type<input_type>>::zero;
     for (const auto& [permutation, coeff] : terms) {
-        input_type product = I<input_type>::one;
+        product_type<input_type> product = I<product_type<input_type>>::one;
         for (auto [variable, power] : permutation.get_monomials()) {
             while (power >= values[variable].size()) {
                 values[variable].push_back(values[variable].back() * values[variable][1]);
@@ -178,6 +223,14 @@ input_type Polynomial<coeff_type>::operator()(std::initializer_list<std::pair<
         result += product * coeff;
     }
     return result;
+}
+
+template <typename coeff_type>
+template <typename input_type>
+Polynomial<coeff_type>::result_type<input_type> Polynomial<coeff_type>::operator()(
+    std::initializer_list<std::pair<const Variable, const input_type&>> inputs) const
+{
+    return evaluate<input_type>(inputs);
 }
 
 template <typename coeff_type>

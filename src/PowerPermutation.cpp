@@ -1,4 +1,5 @@
 #include "PowerPermutation.hpp"
+#include <iostream>
 
 PowerPermutation::PowerPermutation(const std::unordered_map<Variable, unsigned int>& m) :
     monomials{m}
@@ -114,8 +115,8 @@ size_t std::hash<PowerPermutation>::operator()(const PowerPermutation& pp) const
     for (auto [variable, power] : pp.get_monomials()) {
         unsigned int v = hash_uint(variable.get_id());
         unsigned int p = hash_uint(power);
-        result ^= v + 0x9e3779b9 + (result << 6) + (result >> 2);
-        result ^= p + 0x9e3779b9 + (result << 6) + (result >> 2);
+        result ^= v;
+        result ^= p;
     }
     return result;
 }
