@@ -1,12 +1,5 @@
 #include "PowerPermutation.hpp"
 
-PowerPermutation::PowerPermutation()
-{}
-
-PowerPermutation::PowerPermutation(const PowerPermutation& pp) :
-    monomials{pp.monomials}
-{}
-
 PowerPermutation::PowerPermutation(const std::unordered_map<Variable, unsigned int>& m) :
     monomials{m}
 {

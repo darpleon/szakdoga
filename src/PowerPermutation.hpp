@@ -6,10 +6,6 @@
 class PowerPermutation
 {
 public:
-    PowerPermutation();
-
-    PowerPermutation(const PowerPermutation& pp);
-
     PowerPermutation(const std::unordered_map<Variable, unsigned int>& m);
 
     PowerPermutation(std::initializer_list<std::pair<const Variable, unsigned int>> init_list);
