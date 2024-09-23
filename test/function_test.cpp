@@ -1,18 +1,19 @@
 #include <gtest/gtest.h>
 #include "Polynomial.hpp"
 #include "PowerPermutation.hpp"
+#include "Rational.hpp"
 #include "Variable.hpp"
 
 TEST(VariableTest, CreatedSeparately_NotEqual)
 {
-    Variable x;
-    Variable y;
+    Variable x{};
+    Variable y{};
     EXPECT_NE(x, y);
 }
 
 TEST(VariableTest, CopyConstructed_Equal)
 {
-    Variable x;
+    Variable x{};
     Variable y{x};
     EXPECT_EQ(x, y);
 }
@@ -20,13 +21,13 @@ TEST(VariableTest, CopyConstructed_Equal)
 class PowerPermutationTest : public testing::Test
 {
 protected:
-    Variable x, y, z;
+    Variable x{}, y{}, z{};
 };
 
 TEST_F(PowerPermutationTest, DefaultConstructor)
 {
     PowerPermutation p{};
-    EXPECT_TRUE(p.get_monomials().empty());
+    EXPECT_TRUE(p.monomials().empty());
 }
 
 TEST_F(PowerPermutationTest, OperatorConstruction)
@@ -50,7 +51,7 @@ TEST_F(PowerPermutationTest, NoZeroPower)
 	{y, 3}};
     EXPECT_EQ(pp1, ref);
     PowerPermutation pp2 = x^0;
-    EXPECT_TRUE(pp2.get_monomials().empty());
+    EXPECT_TRUE(pp2.monomials().empty());
 }
 
 TEST_F(PowerPermutationTest, MultiplyWithPowerPermutation)
@@ -66,7 +67,7 @@ TEST_F(PowerPermutationTest, MultiplyWithPowerPermutation)
 	{x, 3},
 	{y, 5},
 	{z, 4}};
-    const auto& mn = product.get_monomials();
+    const auto& mn = product.monomials();
     EXPECT_EQ(product, ref);
 }
 
@@ -82,7 +83,7 @@ TEST_F(PowerPermutationTest, Hash)
 class PolynomialTest : public testing::Test
 {
 protected:
-    Variable x, y, z;
+    Variable x{}, y{}, z{};
     Polynomial<double> p1{
 	{{{x, 3}, {y, 2}}, 2.0},
 	{{{z, 4}, {x, 1}}, 3.0}};
@@ -91,9 +92,9 @@ protected:
 TEST_F(PolynomialTest, Identities)
 {
     Polynomial<double> p0 = I<Polynomial<double>>::zero;
-    EXPECT_TRUE(p0.get_terms().empty());
+    EXPECT_TRUE(p0.terms().empty());
     Polynomial<double> p1 = I<Polynomial<double>>::one;
-    const auto& terms = p1.get_terms();
+    const auto& terms = p1.terms();
     EXPECT_EQ(terms.size(), 1);
     EXPECT_DOUBLE_EQ(terms.at(PowerPermutation{}), 1.0);
 }
@@ -161,4 +162,59 @@ TEST_F(PolynomialTest, Derivative)
     EXPECT_EQ(derivatives[0], ref_x);
     EXPECT_EQ(derivatives[1], ref_y);
     EXPECT_EQ(derivatives[2], ref_z);
+}
+
+class RationalTest : public testing::Test
+{
+protected:
+    Variable x{}, y{}, z{};
+    Rational<double> r1{
+	{
+	    {{{x, 2}, {y, 1}}, 1.0},
+	    {{{x, 1}}, 3.0}
+	},
+	{
+	    {{{x, 1}, {y, 1}, {z, 1}}, 2.0},
+	    {{{}}, 1.0}
+	}
+    };
+    Rational<double> r2{
+	{
+	    {{{z, 2}}, 1.0}
+	},
+	{
+	    {{{y, 1}}, 2.0},
+	    {{{z, 1}}, 1.0}
+	}
+    };
+};
+
+TEST_F(RationalTest, OperatorConstruction)
+{
+    Rational<double> r = ((x^2)*y * 1.0 + x * 3.0) / (x*y*z * 2.0 + 1.0);
+    EXPECT_EQ(r, r1);
+}
+
+TEST_F(RationalTest, Multiply)
+{
+    Rational<double> product = r1 * r2;
+    Rational<double> ref = ((x^2)*y*(z^2) + x*(z^2) * 3.0) /
+			    (x*(y^2)*z * 4.0 + x*y*(z^2) * 2.0 + y * 2.0 + z);
+    EXPECT_EQ(product, ref);
+}
+
+TEST_F(RationalTest, Divide)
+{
+    Rational<double> quotient = r1 / r2;
+    Rational<double> ref = (2.0*(x^2)*(y^2) + (x^2)*y*z + 6.0*x*y + 3.0*x*z) /
+			   (2.0*x*y*(z^3) + (z^2));
+    EXPECT_EQ(quotient, ref);
+}
+
+TEST_F(RationalTest, Add)
+{
+    Rational<double> sum = r1 + r2;
+    Rational<double> ref = (2.0*(x^2)*(y^2) + (x^2)*y*z + 2.0*x*y*(z^3) + 6.0*x*y + 3.0*x*z + (z^2)) /
+			   (4.0*x*(y^2)*z + 2.0*x*y*(z^2) + 2.0*y + z);
+    EXPECT_EQ(sum, ref);
 }
