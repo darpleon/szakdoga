@@ -1,12 +1,46 @@
 #include "GLGraphics.hpp"
 #include "Context.hpp"
+#include "Polynomial.hpp"
+#include <format>
+
+#include "PowerPermutation.hpp"
 
 int main()
 {
-    Context context{};
-    GLGraphics graphics{};
+    Variable x;
+    std::cout << x << "\n";
 
-    while (context.window_open()) {
-        context.update();
-    }
+    std::cout << (x^7) << "\n";
+
+    Variable y;
+    Variable z;
+    PowerPermutation pp = (x^2)*(y^1)*(z^3);
+    // {
+    //     {x, 2},
+    //     {y, 1},
+    //     {z, 3}
+    // };
+
+    std::cout << pp << "\n";
+
+    Polynomial<double> poly = pp * 3.71 + (x^1)*(y^3)*(z^0) * 2.0;
+
+    std::cout << "poly: " << poly << "\n";
+
+    double result = poly({
+        {x, 2.0},
+        {y, 3.0},
+        {z, 0.5}});
+
+    std::cout << std::format("result is: {}\n", result);
+
+    std::cout << (x^0) << "\n";
+
+
+    // Context context{};
+    // GLGraphics graphics{};
+    //
+    // while (context.window_open()) {
+    //     context.update();
+    // }
 }
