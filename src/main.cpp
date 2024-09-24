@@ -1,7 +1,6 @@
-#include "GLGraphics.hpp"
-#include "Context.hpp"
 #include "Polynomial.hpp"
 #include <format>
+#include <iostream>
 
 #include "PowerPermutation.hpp"
 
@@ -37,10 +36,4 @@ int main()
     std::cout << (x^0) << "\n";
 
 
-    // Context context{};
-    // GLGraphics graphics{};
-    //
-    // while (context.window_open()) {
-    //     context.update();
-    // }
 }

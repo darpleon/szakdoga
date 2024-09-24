@@ -18,11 +18,8 @@ add_library(
 add_executable(
   main
   src/main.cpp
-  src/Context.cpp
-  src/glad.c
-  src/GLGraphics.cpp
 )
-target_link_libraries(main glfw function)
+target_link_libraries(main function)
 
 
 include(FetchContent)
