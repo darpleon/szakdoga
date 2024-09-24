@@ -101,7 +101,7 @@ TEST_F(PolynomialTest, Identities)
 
 TEST_F(PolynomialTest, OperatorConstruction)
 {
-    Polynomial<double> po = (x^3)*(y^2)*2.0 + (z^4)*x*3.0;
+    Polynomial<double> po = 2.0*(x^3)*(y^2) + 3.0*x*(z^4);
     EXPECT_EQ(po, p1);
 }
 
@@ -191,7 +191,7 @@ protected:
 
 TEST_F(RationalTest, OperatorConstruction)
 {
-    Rational<double> r = ((x^2)*y * 1.0 + x * 3.0) / (x*y*z * 2.0 + 1.0);
+    Rational<double> r = ((x^2)*y + 3.0*x) / (2.0*x*y*z+ 1.0);
     EXPECT_EQ(r, r1);
 }
 
@@ -217,4 +217,28 @@ TEST_F(RationalTest, Add)
     Rational<double> ref = (2.0*(x^2)*(y^2) + (x^2)*y*z + 2.0*x*y*(z^3) + 6.0*x*y + 3.0*x*z + (z^2)) /
 			   (4.0*x*(y^2)*z + 2.0*x*y*(z^2) + 2.0*y + z);
     EXPECT_EQ(sum, ref);
+}
+
+TEST_F(RationalTest, EvaluateDouble)
+{
+    double result = r1.evaluate<double>({{x, -2.0}, {y, 1.0}, {z, 0.0}});
+    EXPECT_DOUBLE_EQ(result, -2.0);
+}
+
+TEST_F(RationalTest, EvaluatePolynomial)
+{
+    Polynomial<double> py = z^2;
+    Polynomial<double> pz = 1.0*x + y;
+    Rational<double> result = r2.evaluate<Polynomial<double>>({{y, py}, {z, pz}});
+    Rational<double> ref = ((x^2) + 2.0*x*y + (y^2)) / (1.0*x + y + 2.0*(z^2));
+    EXPECT_EQ(result, ref);
+}
+
+TEST_F(RationalTest, EvaluateRational)
+{
+    Rational<double> ry{x, y};
+    Rational<double> rz{1.0, (z^2) + 1.0};
+    Rational<double> result = r2.evaluate<Rational<double>>({{y, ry}, {z, rz}});
+    Rational<double> ref = (1.0*(x^2)*y*(z^2) + (x^2)*y) / (2.0*(y^3) + x*(y^2)*(z^2) + x*(y^2));
+    EXPECT_EQ(result, ref);
 }

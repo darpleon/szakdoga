@@ -25,7 +25,11 @@ public:
 
     void operator*=(const Rational& r);
 
+    void operator*=(const coeff_type& multiplier);
+
     Rational operator*(const Rational& r) const;
+
+    Rational operator*(const coeff_type& multiplier) const;
 
     void operator/=(const Rational& r);
 
@@ -52,8 +56,21 @@ template <typename coeff_type>
 std::ostream& operator<<(std::ostream& os, Rational<coeff_type> r);
 
 template <typename coeff_type>
+struct I<Rational<coeff_type>>
+{
+    static const Rational<coeff_type> zero;
+    static const Rational<coeff_type> one;
+};
+
+template <typename coeff_type>
+const Rational<coeff_type> I<Rational<coeff_type>>::zero = Rational<coeff_type>{};
+
+template <typename coeff_type>
+const Rational<coeff_type> I<Rational<coeff_type>>::one = Rational<coeff_type>{I<Polynomial<coeff_type>>::one};
+
+template <typename coeff_type>
 Rational<coeff_type>::Rational() :
-    numerator_{I<coeff_type>::zero}, denominator_{I<coeff_type>::one}
+    numerator_{I<Polynomial<coeff_type>>::zero}, denominator_{I<Polynomial<coeff_type>>::one}
 {}
 
 template <typename coeff_type>
@@ -107,9 +124,23 @@ void Rational<coeff_type>::operator*=(const Rational<coeff_type>& r)
 }
 
 template <typename coeff_type>
+void Rational<coeff_type>::operator*=(const coeff_type& multiplier)
+{
+    numerator_ *= multiplier;
+}
+
+template <typename coeff_type>
 Rational<coeff_type> Rational<coeff_type>::operator*(const Rational<coeff_type>& r) const
 {
     return Rational{numerator_ * r.numerator_, denominator_ * r.denominator_};
+}
+
+template <typename coeff_type>
+Rational<coeff_type> Rational<coeff_type>::operator*(const coeff_type& multiplier) const
+{
+    Rational result{*this};
+    result *= multiplier;
+    return result;
 }
 
 template <typename coeff_type>
