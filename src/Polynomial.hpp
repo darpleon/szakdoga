@@ -51,6 +51,11 @@ public:
     Polynomial operator+(const coeff_type& constant) const;
 
 
+    Polynomial operator-() const;
+
+    Polynomial operator-(const Polynomial& p) const;
+
+
     void operator*=(const Polynomial& p);
 
 
@@ -61,9 +66,6 @@ public:
     Polynomial operator*(Variable x) const;
 
     Polynomial operator*(const coeff_type& multiplier);
-
-
-    Polynomial operator-() const;
 
 
     template <typename input_type>
@@ -229,6 +231,7 @@ void Polynomial<coeff_type>::operator+=(const Polynomial<coeff_type>::term_type&
     else {
         terms_[permutation] = coeff;
     }
+    discard_zeros();
 }
 
 template <typename coeff_type>
@@ -278,6 +281,23 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator+(const coeff_type& const
 
 
 template <typename coeff_type>
+Polynomial<coeff_type> Polynomial<coeff_type>::operator-() const
+{
+    Polynomial result{};
+    for (const auto& [permutation, coeff] : terms_) {
+        result.terms_[permutation] = -coeff;
+    }
+    return result;
+}
+
+template <typename coeff_type>
+Polynomial<coeff_type> Polynomial<coeff_type>::operator-(const Polynomial& p) const
+{
+    return *this + -p;
+}
+
+
+template <typename coeff_type>
 void Polynomial<coeff_type>::operator*=(const Polynomial<coeff_type>& p)
 {
     *this = *this * p;
@@ -318,16 +338,6 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const coeff_type& multi
         coeff *= multiplier;
     }
     return result;
-}
-
-
-template <typename coeff_type>
-Polynomial<coeff_type> Polynomial<coeff_type>::operator-() const
-{
-    Polynomial result;
-    for (const auto& [permutation, coeff] : terms_) {
-        result.terms_[permutation] = -coeff;
-    }
 }
 
 
@@ -397,7 +407,8 @@ void Polynomial<coeff_type>::discard_zeros()
     std::erase_if(terms_, [](const auto& term)
     {
         const auto& [permutation, coeff] = term;
-        return coeff == I<coeff_type>::zero;
+        coeff_type tolerance = std::numeric_limits<coeff_type>::epsilon();
+        return (coeff >= -tolerance) && (coeff <= tolerance);
     });
 }
 
@@ -450,7 +461,7 @@ Polynomial<coeff_type> operator+(coeff_type coeff, const PowerPermutation& pp)
 template <typename coeff_type>
 Polynomial<coeff_type> operator+(Variable x, coeff_type coeff)
 {
-    return Polynomial{{{x, 1}, I<coeff_type>::one}, {{}, coeff}};
+    return Polynomial{{{{x, 1}}, I<coeff_type>::one}, {{}, coeff}};
 }
 template <typename coeff_type>
 Polynomial<coeff_type> operator+(coeff_type coeff, Variable x)

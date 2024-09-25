@@ -44,6 +44,8 @@ public:
         const Variable, const input_type&>> init_list) const;
 
     Rational derivative(Variable x) const;
+
+    std::vector<Rational> derivative(std::initializer_list<Variable> variables) const;
 private:
     Polynomial<coeff_type> numerator_;
     Polynomial<coeff_type> denominator_;
@@ -170,6 +172,17 @@ Rational<coeff_type> Rational<coeff_type>::derivative(Variable x) const
 {
     return Rational{numerator_.derivative(x) * denominator_ - numerator_ * denominator_.derivative(x),
                     denominator_ * denominator_};
+}
+
+template <typename coeff_type>
+std::vector<Rational<coeff_type>> Rational<coeff_type>::derivative(
+    std::initializer_list<Variable> variables) const
+{
+    std::vector<Rational> result{};
+    for (Variable x : variables) {
+        result.push_back(derivative(x));
+    }
+    return result;
 }
 
 template <typename coeff_type>

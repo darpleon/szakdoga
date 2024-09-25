@@ -101,8 +101,11 @@ TEST_F(PolynomialTest, Identities)
 
 TEST_F(PolynomialTest, OperatorConstruction)
 {
-    Polynomial<double> po = 2.0*(x^3)*(y^2) + 3.0*x*(z^4);
-    EXPECT_EQ(po, p1);
+    Polynomial<double> p1o = 2.0*(x^3)*(y^2) + 3.0*x*(z^4);
+    EXPECT_EQ(p1o, p1);
+    Polynomial<double> p2o = 1.0 + x;
+    Polynomial<double> ref2{{{{x, 1}}, 1.0}, {{}, 1.0}};
+    EXPECT_EQ(p2o, ref2);
 }
 
 TEST_F(PolynomialTest, MultiplyDouble)
@@ -236,9 +239,23 @@ TEST_F(RationalTest, EvaluatePolynomial)
 
 TEST_F(RationalTest, EvaluateRational)
 {
-    Rational<double> ry{x, y};
-    Rational<double> rz{1.0, (z^2) + 1.0};
+    Rational<double> ry{1.0, (z^2) + 1.0};
+    Rational<double> rz{x, y};
     Rational<double> result = r2.evaluate<Rational<double>>({{y, ry}, {z, rz}});
     Rational<double> ref = (1.0*(x^2)*y*(z^2) + (x^2)*y) / (2.0*(y^3) + x*(y^2)*(z^2) + x*(y^2));
     EXPECT_EQ(result, ref);
+}
+
+TEST_F(RationalTest, Derivative)
+{
+    std::vector<Rational<double>> derivs = r1.derivative({x, y, z});
+    Rational<double> ref_x = (2.0*(x^2)*(y^2)*z + 2.0*x*y + 3.0) /
+			     (4.0*(x^2)*(y^2)*(z^2) + 4.0*x*y*z + 1.0);
+    Rational<double> ref_y = ((x^2) + (-6.0)*(x^2)*z) /
+			     (4.0*(x^2)*(y^2)*(z^2) + 4.0*x*y*z + 1.0);
+    Rational<double> ref_z = ((-2.0)*(x^3)*(y^2) + (-6.0)*(x^2)*y) /
+			     (4.0*(x^2)*(y^2)*(z^2) + 4.0*x*y*z + 1.0);
+    EXPECT_EQ(derivs[0], ref_x);
+    EXPECT_EQ(derivs[1], ref_y);
+    EXPECT_EQ(derivs[2], ref_z);
 }
