@@ -55,6 +55,9 @@ template <typename coeff_type>
 Rational<coeff_type> operator/(Polynomial<coeff_type> num, Polynomial<coeff_type> den);
 
 template <typename coeff_type>
+Rational<coeff_type> operator*(coeff_type multiplier, const Rational<coeff_type>& r);
+
+template <typename coeff_type>
 std::ostream& operator<<(std::ostream& os, Rational<coeff_type> r);
 
 template <typename coeff_type>
@@ -189,6 +192,12 @@ template <typename coeff_type>
 Rational<coeff_type> operator/(Polynomial<coeff_type> num, Polynomial<coeff_type> den)
 {
     return Rational<coeff_type>(num, den);
+}
+
+template <typename coeff_type>
+Rational<coeff_type> operator*(coeff_type multiplier, const Rational<coeff_type>& r)
+{
+    return r * multiplier;
 }
 
 template <typename coeff_type>

@@ -55,6 +55,8 @@ public:
 
     Polynomial operator-(const Polynomial& p) const;
 
+    Polynomial operator-(const PowerPermutation& pp) const;
+
 
     void operator*=(const Polynomial& p);
 
@@ -65,7 +67,7 @@ public:
 
     Polynomial operator*(Variable x) const;
 
-    Polynomial operator*(const coeff_type& multiplier);
+    Polynomial operator*(const coeff_type& multiplier) const;
 
 
     template <typename input_type>
@@ -125,6 +127,17 @@ template <typename coeff_type>
 Polynomial<coeff_type> operator+(Variable x, coeff_type coeff);
 template <typename coeff_type>
 Polynomial<coeff_type> operator+(coeff_type coeff, Variable x);
+
+
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(const PowerPermutation& pp, coeff_type coeff);
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(coeff_type coeff, const PowerPermutation& pp);
+
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(Variable x, coeff_type coeff);
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(coeff_type coeff, Variable x);
 
 
 template <typename coeff_type>
@@ -296,6 +309,12 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator-(const Polynomial& p) co
     return *this + -p;
 }
 
+template <typename coeff_type>
+Polynomial<coeff_type> Polynomial<coeff_type>::operator-(const PowerPermutation& pp) const
+{
+    return *this - Polynomial{pp};
+}
+
 
 template <typename coeff_type>
 void Polynomial<coeff_type>::operator*=(const Polynomial<coeff_type>& p)
@@ -331,7 +350,7 @@ Polynomial<coeff_type> Polynomial<coeff_type>::operator*(Variable x) const
 }
 
 template <typename coeff_type>
-Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const coeff_type& multiplier)
+Polynomial<coeff_type> Polynomial<coeff_type>::operator*(const coeff_type& multiplier) const
 {
     Polynomial result{*this};
     for (auto& [permutation, coeff] : result.terms_) {
@@ -467,6 +486,29 @@ template <typename coeff_type>
 Polynomial<coeff_type> operator+(coeff_type coeff, Variable x)
 {
     return x + coeff;
+}
+
+
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(const PowerPermutation& pp, coeff_type coeff)
+{
+    return Polynomial<coeff_type>{{pp, I<coeff_type>::one}, {{}, -coeff}};
+}
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(coeff_type coeff, const PowerPermutation& pp)
+{
+    return -(pp - coeff);
+}
+
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(Variable x, coeff_type coeff)
+{
+    return Polynomial{{{{x, 1}}, I<coeff_type>::one}, {{}, -coeff}};
+}
+template <typename coeff_type>
+Polynomial<coeff_type> operator-(coeff_type coeff, Variable x)
+{
+    return -(x - coeff);
 }
 
 
