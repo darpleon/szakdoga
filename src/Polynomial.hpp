@@ -15,6 +15,7 @@ class Polynomial
 public:
     typedef std::pair<const PowerPermutation, coeff_type> term_type;
 
+    Polynomial();
 
     Polynomial(const coeff_type& constant);
 
@@ -168,6 +169,10 @@ const Polynomial<coeff_type> I<Polynomial<coeff_type>>::zero = Polynomial<coeff_
 template <typename coeff_type>
 const Polynomial<coeff_type> I<Polynomial<coeff_type>>::one = Polynomial<coeff_type>{I<coeff_type>::one};
 
+
+template <typename coeff_type>
+Polynomial<coeff_type>::Polynomial()
+{}
 
 template <typename coeff_type>
 Polynomial<coeff_type>::Polynomial(const coeff_type& constant) :

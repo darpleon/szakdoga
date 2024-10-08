@@ -110,15 +110,21 @@ bool Rational<coeff_type>::operator==(const Rational& r) const
 template <typename coeff_type>
 void Rational<coeff_type>::operator+=(const Rational& r)
 {
-    numerator_ = numerator_ * r.denominator_ + denominator_ * r.numerator_;
-    denominator_ = denominator_ * r.denominator_;
+    if (denominator_ == r.denominator_) {
+        numerator_ += r.numerator_;
+    }
+    else {
+        numerator_ = numerator_ * r.denominator_ + denominator_ * r.numerator_;
+        denominator_ = denominator_ * r.denominator_;
+    }
 }
 
 template <typename coeff_type>
 Rational<coeff_type> Rational<coeff_type>::operator+(const Rational& r) const
 {
-    return Rational{numerator_ * r.denominator_ + denominator_ * r.numerator_,
-                    denominator_ * r.denominator_};
+    Rational result{*this};
+    result += r;
+    return result;
 }
 
 template <typename coeff_type>
