@@ -71,6 +71,42 @@ std::string to_string(v3 v)
     return std::format("({:.4f}, {:.4f}, {:.4f})", v[0], v[1], v[2]);
 }
 
+/*void to_obj(std::string filename, std::array<Polynomial<double>, 3> surface, int res) {*/
+/*    std::ofstream output(filename);*/
+/*    std::stringstream vertex_stream;*/
+/*    std::stringstream face_stream;*/
+/**/
+/*    double step = 1.0f / (res - 1);*/
+/**/
+/*    double u_val = 0.0;*/
+/*    double v_val = 0.0;*/
+/*    for (int i = 0; i < res; ++i) {*/
+/*        for (int j = 0; j < res; ++j) {*/
+/*            std::array<double, 3> surface_val;*/
+/*            for (int c = 0; c < 3; ++c) {*/
+/*                surface_val[c] = surface[c].evaluate<double>({{u, u_val}, {v, v_val}});*/
+/*            }*/
+/*            vertex_stream << std::format("v {} {} {}\n", surface_val[0], surface_val[1], surface_val[2]);*/
+/*            u_val += step;*/
+/*        }*/
+/*        u_val = 0.0;*/
+/*        v_val += step;*/
+/*    }*/
+/**/
+/*    for (int i = 0; i < res - 1; ++i) {*/
+/*        for (int j = 0; j < res - 1; ++j) {*/
+/*            int bl = res * i + j + 1;*/
+/*            int br = bl + 1;*/
+/*            int tl = bl + res;*/
+/*            int tr = tl + 1;*/
+/*            face_stream << std::format("f {} {} {}\n", bl, br, tl);*/
+/*            face_stream << std::format("f {} {} {}\n", tl, br, tr);*/
+/*        }*/
+/*    }*/
+/**/
+/*    output << vertex_stream.rdbuf() << "\n" << face_stream.rdbuf();*/
+/*}*/
+
 void to_obj(std::string filename, std::array<Rational<double>, 3> surface, std::array<Rational<double>, 3> normal, int res) {
     std::ofstream output(filename);
     std::stringstream vertex_stream;
@@ -85,14 +121,15 @@ void to_obj(std::string filename, std::array<Rational<double>, 3> surface, std::
         for (int j = 0; j < res; ++j) {
             std::array<double, 3> surface_val;
             std::array<double, 3> normal_val;
-            for (int x = 0; x < 3; ++x) {
-                surface_val[x] = surface[x].evaluate<double>({{u, u_val}, {v, v_val}});
-                normal_val[x] = normal[x].evaluate<double>({{u, u_val}, {v, v_val}});
+            for (int c = 0; c < 3; ++c) {
+                surface_val[c] = surface[c].evaluate<double>({{u, u_val}, {v, v_val}});
+                normal_val[c] = normal[c].evaluate<double>({{u, u_val}, {v, v_val}});
             }
             vertex_stream << std::format("v {} {} {}\n", surface_val[0], surface_val[1], surface_val[2]);
             normal_stream << std::format("vn {} {} {}\n", normal_val[0], normal_val[1], normal_val[2]);
             u_val += step;
         }
+        u_val = 0.0;
         v_val += step;
     }
 
@@ -142,7 +179,7 @@ int main()
 
     Polynomial<double> iota_inv_denom = 1.0 + (x^2) + (y^2);
 
-    std::array<Polynomial<double>, 4> iota_inv_numer{2.0*x, 2.0*y, 1.0 - (x^2) - (y^2), 2.0*z};
+    std::array<Polynomial<double>, 4> iota_inv_numer{2.0*x, 2.0*y, -1.0 + (x^2) + (y^2), 2.0*z};
 
     std::array<Rational<double>, 4> iota_inv{};
     for (int i = 0; i < 3; i++) {
@@ -225,78 +262,104 @@ int main()
         /*std::cout << isotropic_coons[i] << "\n";*/
     }
 
-    Polynomial<double> dual_denom = iota_inv_denom.evaluate<Polynomial<double>>({
+    Polynomial<double> d = iota_inv_denom.evaluate<Polynomial<double>>({
             {x, isotropic_coons[0]},
             {y, isotropic_coons[1]},
             {z, isotropic_coons[2]}
             });
 
-    std::array<Polynomial<double>, 3> n_numer{};
+    std::array<Polynomial<double>, 3> m{};
     std::array<Rational<double>, 3> n{};
     for (int i = 0; i < 3; ++i) {
-        n_numer[i] = iota_inv_numer[i].evaluate<Polynomial<double>>({
+        m[i] = iota_inv_numer[i].evaluate<Polynomial<double>>({
                 {x, isotropic_coons[0]},
                 {y, isotropic_coons[1]},
                 {z, isotropic_coons[2]}
                 });
-        n[i] = n_numer[i] / dual_denom;
+        n[i] = m[i] / d;
     }
-    Polynomial<double> h_numer = iota_inv_numer[3].evaluate<Polynomial<double>>({
+
+    /*to_obj("projected.obj", n, n, 4);*/
+    Polynomial<double> k = iota_inv_numer[3].evaluate<Polynomial<double>>({
             {x, isotropic_coons[0]},
             {y, isotropic_coons[1]},
             {z, isotropic_coons[2]}
             });
-    /*Rational<double> h = h_numer / denom;*/
+    Rational<double> h = k / d;
 
-    std::array<Polynomial<double>, 3> dndu_numer{};
-    std::array<Polynomial<double>, 3> dndv_numer{};
-    Polynomial<double> du_denom = dual_denom.derivative(u);
-    Polynomial<double> dv_denom = dual_denom.derivative(v);
+    Polynomial<double> d2 = d * d;
 
-    for (int i = 0; i < 3; ++i) {
-        dndu_numer[i] = n_numer[i].derivative(u) * dual_denom - n_numer[i] * du_denom;
-        dndv_numer[i] = n_numer[i].derivative(v) * dual_denom - n_numer[i] * dv_denom;
-    }
-
-    Polynomial<double> dhdu_numer = h_numer.derivative(u) * dual_denom - h_numer * du_denom;
-    Polynomial<double> dhdv_numer = h_numer.derivative(v) * dual_denom - h_numer * dv_denom;
-
-    Polynomial<double> dndudot_numer{};
-    Polynomial<double> dndvdot_numer{};
+    std::array<Polynomial<double>, 3> mu{};
+    std::array<Polynomial<double>, 3> mv{};
+    std::array<Rational<double>, 3> nu{};
+    std::array<Rational<double>, 3> nv{};
+    Polynomial<double> du_denom = d.derivative(u);
+    Polynomial<double> dv_denom = d.derivative(v);
 
     for (int i = 0; i < 3; ++i) {
-        dndudot_numer += dndu_numer[i] * dndu_numer[i];
-        dndvdot_numer += dndv_numer[i] * dndv_numer[i];
+        mu[i] = m[i].derivative(u) * d - m[i] * du_denom;
+        mv[i] = m[i].derivative(v) * d - m[i] * dv_denom;
+        nu[i] = mu[i] / d2;
+        nv[i] = mv[i] / d2;
     }
 
-    std::cout << "pieces gathered\n";
+    Polynomial<double> ku = k.derivative(u) * d - k * du_denom;
+    Polynomial<double> kv = k.derivative(v) * d - k * dv_denom;
+    Rational<double> hu = ku / d2;
+    Rational<double> hv = kv / d2;
 
-    Polynomial<double> d2 = dual_denom * dual_denom;
-    std::cout << "completed a double product\n";
-    Polynomial<double> dotudotv = dndudot_numer * dndvdot_numer;
+    /*std::array<Rational<double>, 3> grad_h{};*/
+    /*Rational<double> grad_h_dot_n;*/
+    /**/
+    /*for (int i = 0; i < 3; ++i) {*/
+    /*    grad_h[i] = ku / mu[i] + kv / mv[i];*/
+    /*    grad_h_dot_n += grad_h[i] * n[i];*/
+    /*    std::cout << "first loop: " << i << "\n";*/
+    /*}*/
+    /**/
+    /*std::array<Rational<double>, 3> result{};*/
+    /**/
+    /*for (int i = 0; i < 3; ++i) {*/
+    /*    result[i] = h * n[i] + grad_h[i] - grad_h_dot_n * n[i];*/
+    /*    std::cout << "second loop: " << i << "\n";*/
+    /*}*/
 
-    Polynomial<double> n_component = h_numer * dotudotv;
-    std::cout << "completed a triple product\n";
-    Polynomial<double> u_component = d2 * dhdu_numer * dndvdot_numer;
-    Polynomial<double> v_component = d2 * dhdv_numer * dndudot_numer;
 
-    Polynomial<double> result_denom = d2 * dotudotv;
+    Polynomial<double> muu{};
+    Polynomial<double> mvv{};
+    Polynomial<double> muv{};
+
+    for (int i = 0; i < 3; ++i) {
+        muu += mu[i] * mu[i];
+        mvv += mv[i] * mv[i];
+        muv += mu[i] * mv[i];
+    }
+
+    Polynomial<double> ku_star = muv * kv - mvv * ku;
+    std::cout << "ku*\n";
+    Polynomial<double> kv_star = muv * ku - muu * kv;
+    std::cout << "kv*\n";
+    Polynomial<double> m_star = muv * muv - muu * mvv;
+    std::cout << "m*\n";
+
+    Polynomial<double> result_denom = d2 * m_star;
 
     std::array<Polynomial<double>, 3> result_numer{};
     std::array<Rational<double>, 3> result{};
 
     for (int i = 0; i < 3; ++i) {
-        result_numer[i] = n_component * n_numer[i] + u_component * dndu_numer[i] + v_component * dndv_numer[i];
+        result_numer[i] = k * m_star * m[i]
+                        + d2 * (ku_star * mu[i] + kv_star * mv[i]);
         result[i] = result_numer[i] / result_denom;
-        std::cout << "completed a quadruple product\n";
+        std::cout << "one coordinate down\n";
     }
 
 
     std::cout << "yay\n";
 
-    std::cout << result_denom.terms().size() << "\n";
-    std::cout << result_numer[0].terms().size() << "\n";
-    std::cout << result_numer[2].terms().size() << "\n";
+    /*std::cout << result_denom.terms().size() << "\n";*/
+    /*std::cout << result_numer[0].terms().size() << "\n";*/
+    /*std::cout << result_numer[2].terms().size() << "\n";*/
 
     to_obj("output.obj", result, n, 20);
 

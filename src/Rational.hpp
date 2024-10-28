@@ -13,6 +13,8 @@ public:
 
     Rational(Polynomial<coeff_type> num);
 
+    Rational(const Rational& r);
+
     const Polynomial<coeff_type>& numerator() const;
 
     const Polynomial<coeff_type>& denominator() const;
@@ -22,6 +24,8 @@ public:
     void operator+=(const Rational& r);
 
     Rational operator+(const Rational& r) const;
+
+    Rational operator-(const Rational& r) const;
 
     void operator*=(const Rational& r);
 
@@ -90,6 +94,11 @@ Rational<coeff_type>::Rational(Polynomial<coeff_type> num) :
 {}
 
 template <typename coeff_type>
+Rational<coeff_type>::Rational(const Rational<coeff_type>& r) :
+    numerator_(r.numerator_), denominator_(r.denominator_)
+{}
+
+template <typename coeff_type>
 const Polynomial<coeff_type>& Rational<coeff_type>::numerator() const
 {
     return numerator_;
@@ -124,6 +133,14 @@ Rational<coeff_type> Rational<coeff_type>::operator+(const Rational& r) const
 {
     Rational result{*this};
     result += r;
+    return result;
+}
+
+template <typename coeff_type>
+Rational<coeff_type> Rational<coeff_type>::operator-(const Rational& r) const
+{
+    Rational result{*this};
+    result += -1.0 * r;
     return result;
 }
 
