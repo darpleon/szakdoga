@@ -71,43 +71,116 @@ std::string to_string(v3 v)
     return std::format("({:.4f}, {:.4f}, {:.4f})", v[0], v[1], v[2]);
 }
 
-/*void to_obj(std::string filename, std::array<Polynomial<double>, 3> surface, int res) {*/
-/*    std::ofstream output(filename);*/
-/*    std::stringstream vertex_stream;*/
-/*    std::stringstream face_stream;*/
-/**/
-/*    double step = 1.0f / (res - 1);*/
-/**/
-/*    double u_val = 0.0;*/
-/*    double v_val = 0.0;*/
-/*    for (int i = 0; i < res; ++i) {*/
-/*        for (int j = 0; j < res; ++j) {*/
-/*            std::array<double, 3> surface_val;*/
-/*            for (int c = 0; c < 3; ++c) {*/
-/*                surface_val[c] = surface[c].evaluate<double>({{u, u_val}, {v, v_val}});*/
-/*            }*/
-/*            vertex_stream << std::format("v {} {} {}\n", surface_val[0], surface_val[1], surface_val[2]);*/
-/*            u_val += step;*/
-/*        }*/
-/*        u_val = 0.0;*/
-/*        v_val += step;*/
-/*    }*/
-/**/
-/*    for (int i = 0; i < res - 1; ++i) {*/
-/*        for (int j = 0; j < res - 1; ++j) {*/
-/*            int bl = res * i + j + 1;*/
-/*            int br = bl + 1;*/
-/*            int tl = bl + res;*/
-/*            int tr = tl + 1;*/
-/*            face_stream << std::format("f {} {} {}\n", bl, br, tl);*/
-/*            face_stream << std::format("f {} {} {}\n", tl, br, tr);*/
-/*        }*/
-/*    }*/
-/**/
-/*    output << vertex_stream.rdbuf() << "\n" << face_stream.rdbuf();*/
-/*}*/
+void to_obj_single(std::string filename, Rational<double> surface, int res) {
+    std::ofstream output(filename);
+    std::stringstream vertex_stream;
+    std::stringstream face_stream;
 
-void to_obj(std::string filename, std::array<Rational<double>, 3> surface, std::array<Rational<double>, 3> normal, int res) {
+    double step = 1.0f / (res - 1);
+
+    double u_val = 0.0;
+    double v_val = 0.0;
+    for (int i = 0; i < res; ++i) {
+        for (int j = 0; j < res; ++j) {
+            double surface_val = surface.evaluate<double>({{u, u_val}, {v, v_val}});
+            vertex_stream << std::format("v {} {} {}\n", u_val, v_val, surface_val);
+            u_val += step;
+        }
+        u_val = 0.0;
+        v_val += step;
+    }
+
+    for (int i = 0; i < res - 1; ++i) {
+        for (int j = 0; j < res - 1; ++j) {
+            int bl = res * i + j + 1;
+            int br = bl + 1;
+            int tl = bl + res;
+            int tr = tl + 1;
+            face_stream << std::format("f {} {} {}\n", bl, br, tl);
+            face_stream << std::format("f {} {} {}\n", tl, br, tr);
+        }
+    }
+
+    output << vertex_stream.rdbuf() << "\n" << face_stream.rdbuf();
+}
+
+void to_obj(std::string filename, std::array<Polynomial<double>, 3> surface, int res) {
+    std::ofstream output(filename);
+    std::stringstream vertex_stream;
+    std::stringstream normal_stream;
+    std::stringstream face_stream;
+
+    double step = 1.0f / (res - 1);
+
+    double u_val = 0.0;
+    double v_val = 0.0;
+    for (int i = 0; i < res; ++i) {
+        for (int j = 0; j < res; ++j) {
+            std::array<double, 3> surface_val;
+            std::array<double, 3> normal_val;
+            for (int c = 0; c < 3; ++c) {
+                surface_val[c] = surface[c].evaluate<double>({{u, u_val}, {v, v_val}});
+            }
+            vertex_stream << std::format("v {} {} {}\n", surface_val[0], surface_val[1], surface_val[2]);
+            u_val += step;
+        }
+        u_val = 0.0;
+        v_val += step;
+    }
+
+    for (int i = 0; i < res - 1; ++i) {
+        for (int j = 0; j < res - 1; ++j) {
+            int bl = res * i + j + 1;
+            int br = bl + 1;
+            int tl = bl + res;
+            int tr = tl + 1;
+            face_stream << std::format("f {} {} {}\n", bl, br, tl);
+            face_stream << std::format("f {} {} {}\n", tl, br, tr);
+        }
+    }
+
+    output << vertex_stream.rdbuf() << "\n" << "\n" << face_stream.rdbuf();
+}
+
+void to_obj(std::string filename, std::array<Rational<double>, 3> surface, int res) {
+    std::ofstream output(filename);
+    std::stringstream vertex_stream;
+    std::stringstream normal_stream;
+    std::stringstream face_stream;
+
+    double step = 1.0f / (res - 1);
+
+    double u_val = 0.0;
+    double v_val = 0.0;
+    for (int i = 0; i < res; ++i) {
+        for (int j = 0; j < res; ++j) {
+            std::array<double, 3> surface_val;
+            std::array<double, 3> normal_val;
+            for (int c = 0; c < 3; ++c) {
+                surface_val[c] = surface[c].evaluate<double>({{u, u_val}, {v, v_val}});
+            }
+            vertex_stream << std::format("v {} {} {}\n", surface_val[0], surface_val[1], surface_val[2]);
+            u_val += step;
+        }
+        u_val = 0.0;
+        v_val += step;
+    }
+
+    for (int i = 0; i < res - 1; ++i) {
+        for (int j = 0; j < res - 1; ++j) {
+            int bl = res * i + j + 1;
+            int br = bl + 1;
+            int tl = bl + res;
+            int tr = tl + 1;
+            face_stream << std::format("f {} {} {}\n", bl, br, tl);
+            face_stream << std::format("f {} {} {}\n", tl, br, tr);
+        }
+    }
+
+    output << vertex_stream.rdbuf() << "\n" << "\n" << face_stream.rdbuf();
+}
+
+void to_obj_normal(std::string filename, std::array<Rational<double>, 3> surface, std::array<Rational<double>, 3> normal, int res) {
     std::ofstream output(filename);
     std::stringstream vertex_stream;
     std::stringstream normal_stream;
@@ -279,7 +352,8 @@ int main()
         n[i] = m[i] / d;
     }
 
-    /*to_obj("projected.obj", n, n, 4);*/
+    to_obj_normal("normal.obj", n, n, 20);
+
     Polynomial<double> k = iota_inv_numer[3].evaluate<Polynomial<double>>({
             {x, isotropic_coons[0]},
             {y, isotropic_coons[1]},
@@ -288,6 +362,9 @@ int main()
     Rational<double> h = k / d;
 
     Polynomial<double> d2 = d * d;
+    Polynomial<double> d4 = d2 * d2;
+
+    to_obj_single("support.obj", h, 20);
 
     std::array<Polynomial<double>, 3> mu{};
     std::array<Polynomial<double>, 3> mv{};
@@ -303,27 +380,15 @@ int main()
         nv[i] = mv[i] / d2;
     }
 
+    to_obj("nu.obj", nu, 20);
+    std::cout << "nu\n";
+
     Polynomial<double> ku = k.derivative(u) * d - k * du_denom;
     Polynomial<double> kv = k.derivative(v) * d - k * dv_denom;
     Rational<double> hu = ku / d2;
     Rational<double> hv = kv / d2;
-
-    /*std::array<Rational<double>, 3> grad_h{};*/
-    /*Rational<double> grad_h_dot_n;*/
-    /**/
-    /*for (int i = 0; i < 3; ++i) {*/
-    /*    grad_h[i] = ku / mu[i] + kv / mv[i];*/
-    /*    grad_h_dot_n += grad_h[i] * n[i];*/
-    /*    std::cout << "first loop: " << i << "\n";*/
-    /*}*/
-    /**/
-    /*std::array<Rational<double>, 3> result{};*/
-    /**/
-    /*for (int i = 0; i < 3; ++i) {*/
-    /*    result[i] = h * n[i] + grad_h[i] - grad_h_dot_n * n[i];*/
-    /*    std::cout << "second loop: " << i << "\n";*/
-    /*}*/
-
+    to_obj_single("hu.obj", hu, 40);
+    std::cout << "hu\n";
 
     Polynomial<double> muu{};
     Polynomial<double> mvv{};
@@ -335,12 +400,24 @@ int main()
         muv += mu[i] * mv[i];
     }
 
-    Polynomial<double> ku_star = muv * kv - mvv * ku;
-    std::cout << "ku*\n";
-    Polynomial<double> kv_star = muv * ku - muu * kv;
+    Rational<double> nuu = muu / d4;
+    Rational<double> nvv = mvv / d4;
+    Rational<double> nuv = muv / d4;
+    to_obj_single("nuu.obj", nuu, 40);
+    std::cout << "nuu\n";
+    to_obj_single("nvv.obj", nvv, 40);
+    std::cout << "nvv\n";
+
+    Polynomial<double> k_alpha = mvv * ku - muv * kv;
+    to_obj_single("alpha.obj", k_alpha, 40);
+    std::cout << "alpha\n";
+    Polynomial<double> k_beta = muu * kv - muv * ku;
     std::cout << "kv*\n";
-    Polynomial<double> m_star = muv * muv - muu * mvv;
+    Polynomial<double> m_star = muu * mvv - muv * muv;
     std::cout << "m*\n";
+
+    to_obj_single("star.obj", m_star, 40);
+    std::cout << "star\n";
 
     Polynomial<double> result_denom = d2 * m_star;
 
@@ -349,7 +426,7 @@ int main()
 
     for (int i = 0; i < 3; ++i) {
         result_numer[i] = k * m_star * m[i]
-                        + d2 * (ku_star * mu[i] + kv_star * mv[i]);
+                        + d2 * (k_alpha * mu[i] + k_beta * mv[i]);
         result[i] = result_numer[i] / result_denom;
         std::cout << "one coordinate down\n";
     }
@@ -357,10 +434,11 @@ int main()
 
     std::cout << "yay\n";
 
+    to_obj_normal("output.obj", result, n, 50);
+
     /*std::cout << result_denom.terms().size() << "\n";*/
     /*std::cout << result_numer[0].terms().size() << "\n";*/
     /*std::cout << result_numer[2].terms().size() << "\n";*/
 
-    to_obj("output.obj", result, n, 20);
 
 }
