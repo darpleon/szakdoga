@@ -21,6 +21,11 @@ add_executable(
 )
 target_link_libraries(main function)
 
+add_executable(
+  basic
+  src/basic_implementation.cpp
+)
+
 
 include(FetchContent)
 FetchContent_Declare(
