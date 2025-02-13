@@ -58,16 +58,14 @@ public:
         std::ranges::copy(contents.begin(), contents.end(), d.begin());
     }
 
-    const auto operator[](size_t idx) const
+    const T& operator[](size_t i, size_t j) const
     {
-        auto start = d.begin() + (idx * m);
-        return std::ranges::subrange(start, start + m, m);
+        return d[i * n + j];
     }
 
-    auto operator[](size_t idx)
+    T& operator[](size_t i, size_t j)
     {
-        auto start = d.begin() + (idx * m);
-        return std::ranges::subrange(start, start + m, m);
+        return d[i * n + j];
     }
 
 private:
@@ -170,7 +168,7 @@ int main()
 {
     grid<int> g(2, 2, {1, 2, 3, 4});
     for (auto [i, j] : idx2d(2, 2)) {
-        std::cout << g[i][j] << "\n";
+        std::cout << g[i, j] << "\n";
     }
 
     std::array<int, 4> a{1, 2, 3, 4};
