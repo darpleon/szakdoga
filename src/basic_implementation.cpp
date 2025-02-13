@@ -1,42 +1,136 @@
+#include <cstddef>
 #include <format>
 #include <iostream>
 #include <array>
 #include <eigen3/Eigen/Core>
 #include <functional>
+#include <iterator>
+#include <ranges>
+#include <utility>
+#include <numeric>
 
 using v3 = Eigen::Vector3d;
 using v4 = Eigen::Vector4d;
 using m34 = Eigen::Matrix<double, 4, 3>;
 
-template<typename T, int N, int M = N>
-using grid = std::array<std::array<T, M>, N>;
+/*template<typename T, int N, int M = N>*/
+/*using grid = std::array<std::array<T, M>, N>;*/
+/**/
+/*template<typename T, int N, int M>*/
+/*void foreach_grid(grid<T, N, M> g, std::function<void(int, int)> f)*/
+/*{*/
+/*    for (int i = 0; i < N; ++i) {*/
+/*        for (int j = 0; j < M; ++j) {*/
+/*            f(i, j);*/
+/*        }*/
+/*    }*/
+/*}*/
+/**/
+/*template<int N, int M>*/
+/*constexpr grid<int, N * M, 2> indices_2d_gen()*/
+/*{*/
+/*    grid<int, N * M, 2> idx{};*/
+/*    int c = 0;*/
+/*    for (int i = 0; i < N; ++i) {*/
+/*        for (int j = 0; j < M; ++j) {*/
+/*            idx[c] = {i, j};*/
+/*            ++c;*/
+/*        }*/
+/*    }*/
+/*    return idx;*/
+/*}*/
+/**/
+/*template<int N, int M>*/
+/*constexpr grid<int, N * M, 2> indices_2d = indices_2d_gen<N, M>();*/
 
-template<typename T, int N, int M>
-void foreach_grid(grid<T, N, M> g, std::function<void(int, int)> f)
+template<typename T>
+class grid
 {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j) {
-            f(i, j);
-        }
+public:
+    grid(size_t n, size_t m)
+        : n(n), m(m), d(n * m)
+    {
     }
-}
 
-template<int N, int M>
-constexpr grid<int, N * M, 2> indices_2d_gen()
+    grid(size_t n, size_t m, std::initializer_list<T> contents)
+        : n(n), m(m), d(n * m)
+    {
+        std::ranges::copy(contents.begin(), contents.end(), d.begin());
+    }
+
+    const auto operator[](size_t idx) const
+    {
+        auto start = d.begin() + (idx * m);
+        return std::ranges::subrange(start, start + m, m);
+    }
+
+    auto operator[](size_t idx)
+    {
+        auto start = d.begin() + (idx * m);
+        return std::ranges::subrange(start, start + m, m);
+    }
+
+private:
+    const size_t n, m;
+    std::vector<T> d;
+
+};
+
+class idx2d
 {
-    grid<int, N * M, 2> idx{};
-    int c = 0;
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j) {
-            idx[c] = {i, j};
-            ++c;
-        }
-    }
-    return idx;
-}
+public:
+    idx2d(size_t n, size_t m) :n(n), m(m) {}
 
-template<int N, int M>
-constexpr grid<int, N * M, 2> indices_2d = indices_2d_gen<N, M>();
+    struct iterator
+    {
+        iterator(size_t m, size_t i, size_t j) :m(m), i(i), j(j) {}
+
+        std::array<size_t, 2> operator*()
+        {
+            return {i, j};
+        }
+
+        void operator++()
+        {
+            if (j == m - 1) {
+                ++i;
+                j = 0;
+            }
+            else {
+                ++j;
+            }
+        }
+
+        bool operator!=(const iterator& rhs) const
+        {
+            return i != rhs.i || j != rhs.j;
+        }
+    private:
+        size_t m, i, j;
+    };
+
+
+    iterator begin()
+    {
+        return iterator {m, 0, 0};
+    }
+
+    iterator end()
+    {
+        return iterator {m, n, 0};
+    }
+
+private:
+    size_t n, m;
+};
+
+
+/*std::function<std::array<size_t, 2>(size_t)> idx_splitter(size_t n, size_t m)*/
+/*{*/
+/*    return [n, m] (size_t idx) {*/
+/*        return std::array<size_t, 2>{idx / n, idx & m};*/
+/*    };*/
+/*}*/
 
 double h(v3 p, v3 n)
 {
@@ -70,41 +164,17 @@ m34 iota_inv_jacobian(v3 a)
                                              { -2. * x * z,  -2. * y * z, 1.} };
 }
 
-template<int N, int M>
-grid<v3, N, M> calculate_gamma_star(grid<v3, N, M> a)
-{
-
-}
 
 
 int main()
 {
-    grid<int, 2> g = {{ {1, 2},
-                        {3, 4} }};
-
-    for (auto& line: g) {
-        bool first = true;
-        for (int n: line) {
-            if (first) {
-                first = false;
-            }
-            else {
-                std::cout << ", ";
-            }
-            std::cout << n;
-        }
-        std::cout << "\n";
+    grid<int> g(2, 2, {1, 2, 3, 4});
+    for (auto [i, j] : idx2d(2, 2)) {
+        std::cout << g[i][j] << "\n";
     }
 
-    std::cout << v3{1, 2, 3}[2] << "\n";
-
-    m34 test {{1,  2,  3},
-              {4,  5,  6},
-              {7,  8,  9},
-             {10, 11, 12}};
-
-    std::cout << test << "\n";
-    for (auto [i, j] : indices_2d<3, 4>) {
-        std::cout << std::format("({}, {})\n", i, j);
-    }
+    std::array<int, 4> a{1, 2, 3, 4};
+    auto s = std::ranges::subrange(a.begin() + 1, a.begin() + 3);
+    s[1] = 9;
+    std::cout << a[2] << "\n";
 }
