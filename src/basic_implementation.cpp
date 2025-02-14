@@ -1,16 +1,21 @@
 #include <cstddef>
+#include <cstdio>
 #include <format>
 #include <iostream>
 #include <array>
 #include <eigen3/Eigen/Core>
 #include <functional>
 #include <iterator>
+#include <ostream>
 #include <ranges>
 #include <utility>
 #include <numeric>
+#include <print>
 
 using v3 = Eigen::Vector3d;
 using v4 = Eigen::Vector4d;
+using rv2 = Eigen::RowVector2d;
+using rv3 = Eigen::RowVector3d;
 using m34 = Eigen::Matrix<double, 4, 3>;
 
 /*template<typename T, int N, int M = N>*/
@@ -48,29 +53,39 @@ class grid
 {
 public:
     grid(size_t n, size_t m)
-        : n(n), m(m), d(n * m)
+        : _n(n), _m(m), _d(n * m)
     {
     }
 
-    grid(size_t n, size_t m, std::initializer_list<T> contents)
-        : n(n), m(m), d(n * m)
+    size_t n() const
     {
-        std::ranges::copy(contents.begin(), contents.end(), d.begin());
+        return _n;
+    }
+
+    size_t m() const
+    {
+        return _m;
+    }
+
+    grid(size_t n, size_t m, std::initializer_list<T> contents)
+        : _n(n), _m(m), _d(n * m)
+    {
+        std::ranges::copy(contents.begin(), contents.end(), _d.begin());
     }
 
     const T& operator[](size_t i, size_t j) const
     {
-        return d[i * n + j];
+        return _d[i * _n + j];
     }
 
     T& operator[](size_t i, size_t j)
     {
-        return d[i * n + j];
+        return _d[i * _n + j];
     }
 
 private:
-    const size_t n, m;
-    std::vector<T> d;
+    const size_t _n, _m;
+    std::vector<T> _d;
 
 };
 
@@ -122,13 +137,12 @@ private:
     size_t n, m;
 };
 
+template <typename T>
+idx2d indices(grid<T> g)
+{
+    return idx2d(g.n(), g.m());
+}
 
-/*std::function<std::array<size_t, 2>(size_t)> idx_splitter(size_t n, size_t m)*/
-/*{*/
-/*    return [n, m] (size_t idx) {*/
-/*        return std::array<size_t, 2>{idx / n, idx & m};*/
-/*    };*/
-/*}*/
 
 double h(v3 p, v3 n)
 {
@@ -162,17 +176,51 @@ m34 iota_inv_jacobian(v3 a)
                                              { -2. * x * z,  -2. * y * z, 1.} };
 }
 
+grid<v3> to_isotropic(const grid<v3>& n, const grid<double>& h)
+{
+    grid<v3> a{n.n(), n.m()};
+    for (auto [i, j] : indices(a)) {
+        a[i, j] = iota(n[i, j], h[i, j]);
+    }
+    return a;
+}
+
+v3 calculate_gamma_star(const grid<v3>& a, size_t i, size_t j)
+{
+    if (i == 0) {
+        return 2. * (a[1, j] - a[0, j]);
+    }
+    else if (i == a.n() - 1) {
+        return 2. * (a[a.n() - 1, j] - a[a.n() - 2, j]);
+    }
+    else {
+        return a[i + 1, j] - a[i - 1, j];
+    }
+}
+
+v3 project(const v3& v, const v3& n, double d = 0.)
+{
+    return v - (v.dot(n) - d) * n;
+}
+
+grid<v3> calculate_gamma_star(const grid<v3>& a)
+{
+    grid<v3> gs{a.n(), a.m()};
+    for (auto [i, j] : indices(gs)) {
+        gs[i, j] = calculate_gamma_star(a, i, j);
+    }
+    return gs;
+}
+
+/*v3 calculate_b(const v3& p, const v3)*/
 
 
 int main()
 {
-    grid<int> g(2, 2, {1, 2, 3, 4});
-    for (auto [i, j] : idx2d(2, 2)) {
-        std::cout << g[i, j] << "\n";
-    }
+    grid<v3> pij{2, 2};
+    grid<v3> nij{2, 2};
 
-    std::array<int, 4> a{1, 2, 3, 4};
-    auto s = std::ranges::subrange(a.begin() + 1, a.begin() + 3);
-    s[1] = 9;
-    std::cout << a[2] << "\n";
+    for (auto [i, j] : idx2d(2, 2)) {
+
+    }
 }
