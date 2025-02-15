@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <format>
@@ -18,35 +19,6 @@ using rv2 = Eigen::RowVector2d;
 using rv3 = Eigen::RowVector3d;
 using m34 = Eigen::Matrix<double, 4, 3>;
 
-/*template<typename T, int N, int M = N>*/
-/*using grid = std::array<std::array<T, M>, N>;*/
-/**/
-/*template<typename T, int N, int M>*/
-/*void foreach_grid(grid<T, N, M> g, std::function<void(int, int)> f)*/
-/*{*/
-/*    for (int i = 0; i < N; ++i) {*/
-/*        for (int j = 0; j < M; ++j) {*/
-/*            f(i, j);*/
-/*        }*/
-/*    }*/
-/*}*/
-/**/
-/*template<int N, int M>*/
-/*constexpr grid<int, N * M, 2> indices_2d_gen()*/
-/*{*/
-/*    grid<int, N * M, 2> idx{};*/
-/*    int c = 0;*/
-/*    for (int i = 0; i < N; ++i) {*/
-/*        for (int j = 0; j < M; ++j) {*/
-/*            idx[c] = {i, j};*/
-/*            ++c;*/
-/*        }*/
-/*    }*/
-/*    return idx;*/
-/*}*/
-/**/
-/*template<int N, int M>*/
-/*constexpr grid<int, N * M, 2> indices_2d = indices_2d_gen<N, M>();*/
 
 template<typename T>
 class grid
@@ -174,6 +146,46 @@ m34 iota_inv_jacobian(v3 a)
                                              { -2. * x * y, 1. + x2 - y2, 0.},
                                              {     -2. * x,      -2. * y, 0.},
                                              { -2. * x * z,  -2. * y * z, 1.} };
+}
+
+double F0(double t)
+{
+    return 2. * t * t * t  - 3. * t * t + 1.;
+}
+
+double F0d(double t)
+{
+    return 6. * t * t - 6. * t;
+}
+
+double F1(double t)
+{
+    return 1. - F0(t);
+}
+
+double F1d(double t)
+{
+    return -F0d(t);
+}
+
+double F2(double t)
+{
+    return t * t * t - 2. * t * t + t;
+}
+
+double F2d(double t)
+{
+    return 3. * t * t - 4. * t + 1.;
+}
+
+double F3(double t)
+{
+    return t * t * t - t * t;
+}
+
+double F3d(double t)
+{
+    return 3. * t * t - 2. * t;
 }
 
 grid<v3> to_isotropic(const grid<v3>& n, const grid<double>& h)
