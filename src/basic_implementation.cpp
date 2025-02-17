@@ -5,19 +5,17 @@
 #include <iostream>
 #include <array>
 #include <eigen3/Eigen/Core>
-#include <functional>
 #include <iterator>
 #include <ostream>
-#include <ranges>
-#include <utility>
-#include <numeric>
 #include <print>
 
 using v3 = Eigen::Vector3d;
 using v4 = Eigen::Vector4d;
 using rv2 = Eigen::RowVector2d;
 using rv3 = Eigen::RowVector3d;
-using m34 = Eigen::Matrix<double, 4, 3>;
+using m33 = Eigen::Matrix<double, 3, 3>;
+using m43 = Eigen::Matrix<double, 4, 3>;
+using m34 = Eigen::Matrix<double, 3, 4>;
 
 
 template<typename T>
@@ -123,7 +121,7 @@ double h(v3 p, v3 n)
 
 v3 iota(v3 n, double h)
 {
-    return 1. / (1. - n.z()) * v3{n.x(), n.y(), h};
+    return (1. / (1. - n.z())) * v3{n.x(), n.y(), h};
 }
 
 v4 iota_inv(v3 a)
@@ -134,7 +132,7 @@ v4 iota_inv(v3 a)
                                                           2 * a.z()};
 }
 
-m34 iota_inv_jacobian(v3 a)
+m43 iota_inv_jacobian(v3 a)
 {
     const double& x = a.x();
     const double& y = a.y();
@@ -142,7 +140,7 @@ m34 iota_inv_jacobian(v3 a)
     double x2 = a.x() * a.x();
     double y2 = a.y() * a.y();
     double one_plus = (1. + x2 + y2);
-    return 1. / (one_plus * one_plus) * m34{ {1. - x2 + y2,  -2. * x * y, 0.},
+    return 2. / (one_plus * one_plus) * m43{ {1. - x2 + y2,  -2. * x * y, 0.},
                                              { -2. * x * y, 1. + x2 - y2, 0.},
                                              {     -2. * x,      -2. * y, 0.},
                                              { -2. * x * z,  -2. * y * z, 1.} };
@@ -210,29 +208,69 @@ v3 calculate_gamma_star(const grid<v3>& a, size_t i, size_t j)
     }
 }
 
-v3 project(const v3& v, const v3& n, double d = 0.)
+v3 calculate_delta_star(const grid<v3>& a, size_t i, size_t j)
 {
-    return v - (v.dot(n) - d) * n;
-}
-
-grid<v3> calculate_gamma_star(const grid<v3>& a)
-{
-    grid<v3> gs{a.n(), a.m()};
-    for (auto [i, j] : indices(gs)) {
-        gs[i, j] = calculate_gamma_star(a, i, j);
+    if (j == 0) {
+        return 2. * (a[i, 1] - a[i, 0]);
     }
-    return gs;
+    else if (j == a.n() - 1) {
+        return 2. * (a[i, a.n() - 1] - a[i, a.n() - 2]);
+    }
+    else {
+        return a[i, j + 1] - a[i, j - 1];
+    }
 }
-
-/*v3 calculate_b(const v3& p, const v3)*/
-
 
 int main()
 {
-    grid<v3> pij{2, 2};
-    grid<v3> nij{2, 2};
+    grid<v3> p{3, 3, { v3{0., 0., 0.},          v3{0., -11./72., -1./12.},    v3{0., -2./9., -1./3.},
+                         v3{11./72., 0., 1./12.}, v3{7./36., -7./36., 0.},      v3{23./72., -11./36., -1./4.},
+                         v3{2./9., 0., 1./3.},    v3{11./36., -23./72., 1./4.}, v3{5./9., -5./9., 0.} }};
 
-    for (auto [i, j] : idx2d(2, 2)) {
+    grid<v3> n{3, 3, { v3{0., 0., -1.},       v3{0., 4./5., -3./5.},    v3{0., 1., 0.},
+                         v3{4./5., 0., -3./5.}, v3{2./3., 2./3., -1./3.}, v3{4./9., 8./9., 1./9.},
+                         v3{1., 0., 0.},        v3{8./9., 4./9., 1./9.},  v3{2./3., 2./3., 1./3.} }};
 
+    grid<double> h{3, 3};
+    grid<v3> a{3, 3};
+    grid<m33> dn_dy{3, 3};
+    grid<rv3> dh_dy{3, 3};
+    grid<v3> b{3, 3};
+
+    for (auto [i, j] : idx2d{3, 3}) {
+        h[i, j] = p[i, j].dot(n[i, j]);
+        a[i, j] = iota(n[i, j], h[i, j]);
+        m43 jac = iota_inv_jacobian(a[i, j]);
+        dn_dy[i, j] = jac.topRows<3>();
+        dh_dy[i, j] = jac.bottomRows<1>();
+        b[i, j] = (p[i, j].transpose() * dn_dy[i, j] - dh_dy[i, j]).transpose();
+    }
+
+    grid<v3> gamma{3, 3};
+    grid<v3> delta{3, 3};
+
+    for (auto [i, j] : idx2d{3, 3}) {
+        v3 gamma_star = calculate_gamma_star(a, i, j);
+        gamma[i, j] = gamma_star - b[i, j].dot(gamma_star) * b[i, j];
+
+        v3 delta_star = calculate_delta_star(a, i, j);
+        delta[i, j] = delta_star - b[i, j].dot(delta_star) * b[i, j];
+    }
+
+    grid<m34> c_interp_matrix{2, 3};
+    grid<m34> d_interp_matrix{3, 2};
+
+    for (auto [i, j] : idx2d{2, 3}) {
+        c_interp_matrix[i, j] << a[i, j], a[i + 1, j], gamma[i, j], gamma[i + 1, j];
+    }
+
+    for (auto [i, j] : idx2d{3, 2}) {
+        c_interp_matrix[i, j] << a[i, j], a[i, j + 1], delta[i, j], delta[i, j + 1];
+    }
+
+    for (auto [i, j] : idx2d{3, 3}) {
+        std::println("i = {}, j = {}", i, j);
+        std::cout << dn_dy[i, j] << "\n";
+        std::cout << dh_dy[i, j] << "\n\n";
     }
 }
