@@ -23,9 +23,11 @@ class grid
 {
 public:
     grid(size_t n, size_t m)
-        : _n(n), _m(m), _d(n * m)
+        : _n{n}, _m{m}, _d(n * m)
     {
     }
+
+    grid(grid&& g) : _n{g._n}, _m{g._m}, _d{std::move(g._d)} {}
 
     size_t n() const
     {
@@ -59,58 +61,59 @@ private:
 
 };
 
-class idx2d
+struct idx2d
 {
-public:
-    idx2d(size_t n, size_t m) :n(n), m(m) {}
+    idx2d(size_t m, size_t i, size_t j) :m(m), idx{i, j} {}
 
-    struct iterator
+    std::array<size_t, 2> operator*()
     {
-        iterator(size_t m, size_t i, size_t j) :m(m), i(i), j(j) {}
-
-        std::array<size_t, 2> operator*()
-        {
-            return {i, j};
-        }
-
-        void operator++()
-        {
-            if (j == m - 1) {
-                ++i;
-                j = 0;
-            }
-            else {
-                ++j;
-            }
-        }
-
-        bool operator!=(const iterator& rhs) const
-        {
-            return i != rhs.i || j != rhs.j;
-        }
-    private:
-        size_t m, i, j;
-    };
-
-
-    iterator begin()
-    {
-        return iterator {m, 0, 0};
+        return idx;
     }
 
-    iterator end()
+    void operator++()
     {
-        return iterator {m, n, 0};
+        if (idx[1] == m - 1) {
+            ++idx[0];
+            idx[1] = 0;
+        }
+        else {
+            ++idx[1];
+        }
+    }
+
+    bool operator!=(const idx2d& rhs) const
+    {
+        return idx != rhs.idx;
+    }
+private:
+    std::array<size_t, 2> idx;
+    size_t m;
+};
+
+class range2d
+{
+public:
+    range2d(size_t n, size_t m) :n(n), m(m) {}
+
+    idx2d begin()
+    {
+        return idx2d {m, 0, 0};
+    }
+
+    idx2d end()
+    {
+        return idx2d {m, n, 0};
     }
 
 private:
     size_t n, m;
 };
 
+
 template <typename T>
-idx2d indices(grid<T> g)
+range2d indices(grid<T> g)
 {
-    return idx2d(g.n(), g.m());
+    return range2d(g.n(), g.m());
 }
 
 
@@ -186,13 +189,31 @@ double F3d(double t)
     return 3. * t * t - 2. * t;
 }
 
-grid<v3> to_isotropic(const grid<v3>& n, const grid<double>& h)
+std::function<std::vector<double>(std::function<double(size_t)>)> value_generator(unsigned int res)
 {
-    grid<v3> a{n.n(), n.m()};
-    for (auto [i, j] : indices(a)) {
-        a[i, j] = iota(n[i, j], h[i, j]);
-    }
-    return a;
+    return [res] (std::function<double(size_t)> f) {
+        std::vector<double> values{};
+        values.reserve(res + 1);
+
+        for (size_t i = 0; i <= res; ++i) {
+            values.push_back(f(i));
+        }
+        return values;
+    };
+}
+
+std::function<double(size_t)> t_func(unsigned int res)
+{
+    return [res] (size_t i) -> double {
+        return static_cast<double>(i) / static_cast<double>(res);
+    };
+}
+
+std::function<double(size_t)> interp_func(const std::vector<double>& t)
+{
+    return [t] (size_t i) {
+        return t[i] * 2.;
+    };
 }
 
 v3 calculate_gamma_star(const grid<v3>& a, size_t i, size_t j)
@@ -221,23 +242,15 @@ v3 calculate_delta_star(const grid<v3>& a, size_t i, size_t j)
     }
 }
 
-int main()
+std::array<grid<m34>, 2> calculate_interp(const grid<v3>& p, const grid<v3>& n)
 {
-    grid<v3> p{3, 3, { v3{0., 0., 0.},          v3{0., -11./72., -1./12.},    v3{0., -2./9., -1./3.},
-                         v3{11./72., 0., 1./12.}, v3{7./36., -7./36., 0.},      v3{23./72., -11./36., -1./4.},
-                         v3{2./9., 0., 1./3.},    v3{11./36., -23./72., 1./4.}, v3{5./9., -5./9., 0.} }};
-
-    grid<v3> n{3, 3, { v3{0., 0., -1.},       v3{0., 4./5., -3./5.},    v3{0., 1., 0.},
-                         v3{4./5., 0., -3./5.}, v3{2./3., 2./3., -1./3.}, v3{4./9., 8./9., 1./9.},
-                         v3{1., 0., 0.},        v3{8./9., 4./9., 1./9.},  v3{2./3., 2./3., 1./3.} }};
-
     grid<double> h{3, 3};
     grid<v3> a{3, 3};
     grid<m33> dn_dy{3, 3};
     grid<rv3> dh_dy{3, 3};
     grid<v3> b{3, 3};
 
-    for (auto [i, j] : idx2d{3, 3}) {
+    for (auto [i, j] : range2d{3, 3}) {
         h[i, j] = p[i, j].dot(n[i, j]);
         a[i, j] = iota(n[i, j], h[i, j]);
         m43 jac = iota_inv_jacobian(a[i, j]);
@@ -249,7 +262,7 @@ int main()
     grid<v3> gamma{3, 3};
     grid<v3> delta{3, 3};
 
-    for (auto [i, j] : idx2d{3, 3}) {
+    for (auto [i, j] : range2d{3, 3}) {
         v3 gamma_star = calculate_gamma_star(a, i, j);
         gamma[i, j] = gamma_star - b[i, j].dot(gamma_star) * b[i, j];
 
@@ -257,20 +270,41 @@ int main()
         delta[i, j] = delta_star - b[i, j].dot(delta_star) * b[i, j];
     }
 
-    grid<m34> c_interp_matrix{2, 3};
-    grid<m34> d_interp_matrix{3, 2};
+    grid<m34> c_interp{2, 3};
+    grid<m34> d_interp{3, 2};
 
-    for (auto [i, j] : idx2d{2, 3}) {
-        c_interp_matrix[i, j] << a[i, j], a[i + 1, j], gamma[i, j], gamma[i + 1, j];
+    for (auto [i, j] : range2d{2, 3}) {
+        c_interp[i, j] << a[i, j], a[i + 1, j], gamma[i, j], gamma[i + 1, j];
     }
 
-    for (auto [i, j] : idx2d{3, 2}) {
-        c_interp_matrix[i, j] << a[i, j], a[i, j + 1], delta[i, j], delta[i, j + 1];
+    for (auto [i, j] : range2d{3, 2}) {
+        c_interp[i, j] << a[i, j], a[i, j + 1], delta[i, j], delta[i, j + 1];
     }
 
-    for (auto [i, j] : idx2d{3, 3}) {
-        std::println("i = {}, j = {}", i, j);
-        std::cout << dn_dy[i, j] << "\n";
-        std::cout << dh_dy[i, j] << "\n\n";
+    return {std::move(c_interp), std::move(d_interp)};
+}
+
+int main()
+{
+    grid<v3> p{3, 3, { v3{0., 0., 0.},          v3{0., -11./72., -1./12.},    v3{0., -2./9., -1./3.},
+                         v3{11./72., 0., 1./12.}, v3{7./36., -7./36., 0.},      v3{23./72., -11./36., -1./4.},
+                         v3{2./9., 0., 1./3.},    v3{11./36., -23./72., 1./4.}, v3{5./9., -5./9., 0.} }};
+
+    grid<v3> n{3, 3, { v3{0., 0., -1.},       v3{0., 4./5., -3./5.},    v3{0., 1., 0.},
+                         v3{4./5., 0., -3./5.}, v3{2./3., 2./3., -1./3.}, v3{4./9., 8./9., 1./9.},
+                         v3{1., 0., 0.},        v3{8./9., 4./9., 1./9.},  v3{2./3., 2./3., 1./3.} }};
+
+    /*auto [c_interp, d_interp] = calculate_interp(p, n);*/
+
+    /*for (auto [i, j] : range2d{2, 3}) {*/
+    /*    std::println("i = {}, j = {}", i, j);*/
+    /*    std::cout << c_interp[i, j] << "\n\n";*/
+    /*}*/
+
+    auto generate = value_generator(4);
+    std::vector<double> tv = generate(t_func(4));
+    std::vector<double> dv = generate(interp_func(tv));
+    for (double v : dv) {
+        std::cout << v << "\n";
     }
 }
