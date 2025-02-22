@@ -280,8 +280,18 @@ V<3> calculate_delta_star(const grid<V<3>>& a, size_t i, size_t j)
     }
 }
 
+template <int S, int R, int C>
+M<S * R, S * C> inflate(M<R, C> m)
+{
+    M<S * R, S * C> f;
+    for (auto [i, j] : range2d{R, C}) {
+        f.template block<S, S>(S * i, S * j) = m(i, j) * M<S, S>::Identity();
+    }
+    return f;
+}
 
-grid<M<12, 4>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
+
+grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
 {
     grid<double> h{3, 3};
     grid<V<3>> a{3, 3};
@@ -298,28 +308,32 @@ grid<M<12, 4>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
         b[i, j] = (p[i, j].transpose() * dn_dy[i, j] - dh_dy[i, j]).transpose();
     }
 
-    grid<V<3>> gamma{3, 3};
-    grid<V<3>> delta{3, 3};
+    /*grid<V<3>> gamma{3, 3};*/
+    /*grid<V<3>> delta{3, 3};*/
+
+    grid<M<6, 2>> interp{3, 3};
 
     for (auto [i, j] : range2d{3, 3}) {
         V<3> gamma_star = calculate_gamma_star(a, i, j);
-        gamma[i, j] = gamma_star - b[i, j].dot(gamma_star) * b[i, j];
+        V<3> gamma = gamma_star - b[i, j].dot(gamma_star) * b[i, j];
 
         V<3> delta_star = calculate_delta_star(a, i, j);
-        delta[i, j] = delta_star - b[i, j].dot(delta_star) * b[i, j];
+        V<3> delta = delta_star - b[i, j].dot(delta_star) * b[i, j];
+
+        interp[i, j] << a[i, j], delta, gamma, V<3>::Zero();
     }
 
-    grid<M<12, 4>> interp{2, 2};
-
-    for (auto [i, j] : range2d{2, 2})
-    {
-        auto block = [i, j] (const grid<V<3>>& g) {
-            M<6, 2> block;
-            block << g[i, j], g[i, j + 1], g[i + 1, j], g[i + 1, j + 1];
-            return block;
-        };
-        interp[i, j] << block(a), block(delta), block(gamma), M<6, 2>::Zero();
-    }
+    /*grid<M<12, 4>> interp{2, 2};*/
+    /**/
+    /*for (auto [i, j] : range2d{2, 2})*/
+    /*{*/
+    /*    auto block = [i, j] (const grid<V<3>>& g) {*/
+    /*        M<6, 2> block;*/
+    /*        block << g[i, j], g[i, j + 1], g[i + 1, j], g[i + 1, j + 1];*/
+    /*        return block;*/
+    /*    };*/
+    /*    interp[i, j] << block(a), block(delta), block(gamma), M<6, 2>::Zero();*/
+    /*}*/
 
     return interp;
 }
@@ -334,11 +348,12 @@ int main()
                          V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
                          V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
 
-    grid<M<12, 4>> interp = calculate_interp(p, n);
+    grid<M<6, 2>> interp = calculate_interp(p, n);
     
 
     for (auto [i, j] : indices(interp)) {
         std::println("i = {}, j = {}", i, j);
         std::cout << interp[i, j] << "\n\n";
     }
+
 }
