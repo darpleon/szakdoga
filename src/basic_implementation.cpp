@@ -5,8 +5,9 @@
 #include <iostream>
 #include <array>
 #include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/LU>
 #include <iterator>
-#include <ostream>
+#include <fstream>
 #include <print>
 
 /*using v<3> = Eigen::Vector3d;*/
@@ -60,6 +61,16 @@ public:
     {
         return _d[i * _n + j];
     }
+
+    using iterator = std::vector<T>::iterator;
+    using const_iterator = std::vector<T>::const_iterator;
+
+    iterator begin() { return _d.begin(); }
+    iterator end() { return _d.end(); }
+    const_iterator begin() const { return _d.begin(); }
+    const_iterator end() const { return _d.end(); }
+    const_iterator cbegin() const { return _d.cbegin(); }
+    const_iterator cend() const { return _d.cend(); }
 
 private:
     const size_t _n, _m;
@@ -137,7 +148,7 @@ V<4> iota_inv(V<3> a)
 {
     return 1. / (1. + a.x() * a.x() + a.y() * a.y()) * V<4>{2 * a.x(),
                                                           2 * a.y(),
-                                                          1. - a.x() * a.x() - a.y() * a.y(),
+                                                          -(1. - a.x() * a.x() - a.y() * a.y()),
                                                           2 * a.z()};
 }
 
@@ -151,7 +162,7 @@ M<4, 3> iota_inv_jacobian(V<3> a)
     double one_plus = (1. + x2 + y2);
     return 2. / (one_plus * one_plus) * M<4, 3>{ {1. - x2 + y2,  -2. * x * y, 0.},
                                              { -2. * x * y, 1. + x2 - y2, 0.},
-                                             {     -2. * x,      -2. * y, 0.},
+                                             {     2. * x,      2. * y, 0.},
                                              { -2. * x * z,  -2. * y * z, 1.} };
 }
 
@@ -175,76 +186,106 @@ double F1d(double t)
     return -F0d(t);
 }
 
-double F2(double t)
+double G0(double t)
 {
     return t * t * t - 2. * t * t + t;
 }
 
-double F2d(double t)
+double G0d(double t)
 {
     return 3. * t * t - 4. * t + 1.;
 }
 
-double F3(double t)
+double G1(double t)
 {
     return t * t * t - t * t;
 }
 
-double F3d(double t)
+double G1d(double t)
 {
     return 3. * t * t - 2. * t;
 }
 
-template <typename T>
-std::function<std::vector<T>(std::function<T(size_t)>)> value_generator(unsigned int res)
+V<4> hermite(double t)
 {
-    return [res] (std::function<T(size_t)> f) {
-        std::vector<T> values{};
-        values.reserve(res + 1);
-
-        for (size_t i = 0; i <= res; ++i) {
-            values.push_back(f(i));
-        }
-        return values;
-    };
+    return V<4>{F0(t), G0(t), F1(t), G1(t)};
 }
 
-V<4> ferguson_vec(double t)
+V<4> hermite_d(double t)
 {
-    return V<4>{F0(t), F1(t), F2(t), F3(t)};
+    return V<4>{F0d(t), G0d(t), F1d(t), G1d(t)};
 }
 
-std::function<V<4>(size_t)> ferguson_func(const std::vector<double> t)
+void to_obj(std::string filename, const grid<V<3>>& vertices)
 {
-    return [&t] (size_t i) -> V<4> {
-        return ferguson_vec(t[i]);
-    };
+    std::stringstream vertex_stream;
+    std::stringstream face_stream;
+
+    for (const V<3>& v : vertices) {
+        std::println(vertex_stream, "v {} {} {}", v[0], v[1], v[2]);
+    }
+    size_t n = vertices.n();
+    size_t m = vertices.m();
+    for (auto [i, j] : range2d{n - 1, m - 1}) {
+        size_t tl = m * i + j + 1; 
+        size_t tr = tl + 1;
+        size_t bl = tl + m;
+        size_t br = bl + 1;
+        std::println(face_stream, "f {} {} {}", tl, tr, bl);
+        std::println(face_stream, "f {} {} {}", tr, bl, br);
+    }
+
+    std::ofstream output(filename);
+    output << vertex_stream.rdbuf() << face_stream.rdbuf();
 }
 
-std::function<V<3>(size_t)> boundary(M<3, 4> interp, std::vector<V<4>> ferguson)
+template <int S, int R, int C>
+M<S * R, S * C> inflate(M<R, C> m)
 {
-    return [&interp, &ferguson] (size_t i) -> V<3> {
-        return interp * ferguson[i];
-    };
+    M<S * R, S * C> f;
+    for (auto [i, j] : range2d{R, C}) {
+        f.template block<S, S>(S * i, S * j) = m(i, j) * M<S, S>::Identity();
+    }
+    return f;
 }
 
-std::function<double(size_t)> t_func(unsigned int res)
+double ddivide(size_t a, size_t b)
 {
-    return [res] (size_t i) -> double {
-        return static_cast<double>(i) / static_cast<double>(res);
-    };
+    return static_cast<double>(a) / static_cast<double>(b);
 }
 
-grid<double> calculate_coons(size_t res, grid<M<3, 4>> interp)
+std::pair<grid<V<3>>, grid<M<3, 2>>> calculate_coons(size_t res, const M<12, 4>& interp_data)
 {
-    grid<double> y{res + 1, res + 1};
-    auto generate_double = value_generator<double>(res);
-    /*auto generate_v<4> = value_generator<v<4>>(res);*/
-    /*auto generate_v<3> = value_generator<v<3>>(res);*/
-    /*std::vector<double> t = generate_double(t_func(res));*/
-    /*std::vector<v<4>> F = generate_v<4>(ferguson_func(t));*/
-    
-    return y;
+
+    std::vector<V<4>> fv;
+    std::vector<M<3, 12>> fu;
+    std::vector<V<4>> fvd;
+    std::vector<M<3, 12>> fud;
+    fv.reserve(res + 1);
+    fu.reserve(res + 1);
+    fvd.reserve(res + 1);
+    fud.reserve(res + 1);
+    for (int i = 0; i <= res; ++i) {
+        double t = ddivide(i, res);
+        V<4> f = hermite(t);
+        V<4> fd = hermite_d(t);
+        fv.push_back(f);
+        fvd.push_back(fd);
+        RV<4> ft = f.transpose();
+        RV<4> fdt = fd.transpose();
+        fu.push_back(inflate<3>(ft));
+        fud.push_back(inflate<3>(fdt));
+    }
+
+    grid<V<3>> y{res + 1, res + 1};
+    grid<M<3, 2>> dy_ds{res + 1, res + 1};
+
+    for (auto [i, j] : range2d(res + 1, res + 1)) {
+        y[i, j] << fu[i] * interp_data * fv[j];
+        dy_ds[i, j] << fud[i] * interp_data * fv[j], fu[i] * interp_data * fvd[j];
+    }
+
+    return {std::move(y), std::move(dy_ds)};
 }
 
 std::function<double(size_t)> interp_func(const std::vector<double>& t)
@@ -280,36 +321,20 @@ V<3> calculate_delta_star(const grid<V<3>>& a, size_t i, size_t j)
     }
 }
 
-template <int S, int R, int C>
-M<S * R, S * C> inflate(M<R, C> m)
-{
-    M<S * R, S * C> f;
-    for (auto [i, j] : range2d{R, C}) {
-        f.template block<S, S>(S * i, S * j) = m(i, j) * M<S, S>::Identity();
-    }
-    return f;
-}
-
 
 grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
 {
-    grid<double> h{3, 3};
     grid<V<3>> a{3, 3};
-    grid<M<3, 3>> dn_dy{3, 3};
-    grid<RV<3>> dh_dy{3, 3};
     grid<V<3>> b{3, 3};
 
     for (auto [i, j] : range2d{3, 3}) {
-        h[i, j] = p[i, j].dot(n[i, j]);
-        a[i, j] = iota(n[i, j], h[i, j]);
+        double h = p[i, j].dot(n[i, j]);
+        a[i, j] = iota(n[i, j], h);
         M<4, 3> jac = iota_inv_jacobian(a[i, j]);
-        dn_dy[i, j] = jac.topRows<3>();
-        dh_dy[i, j] = jac.bottomRows<1>();
-        b[i, j] = (p[i, j].transpose() * dn_dy[i, j] - dh_dy[i, j]).transpose();
+        M<3, 3> dn_dy = jac.topRows<3>();
+        RV<3> dh_dy = jac.bottomRows<1>();
+        b[i, j] = (p[i, j].transpose() * dn_dy - dh_dy).transpose();
     }
-
-    /*grid<V<3>> gamma{3, 3};*/
-    /*grid<V<3>> delta{3, 3};*/
 
     grid<M<6, 2>> interp{3, 3};
 
@@ -322,18 +347,6 @@ grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
 
         interp[i, j] << a[i, j], delta, gamma, V<3>::Zero();
     }
-
-    /*grid<M<12, 4>> interp{2, 2};*/
-    /**/
-    /*for (auto [i, j] : range2d{2, 2})*/
-    /*{*/
-    /*    auto block = [i, j] (const grid<V<3>>& g) {*/
-    /*        M<6, 2> block;*/
-    /*        block << g[i, j], g[i, j + 1], g[i + 1, j], g[i + 1, j + 1];*/
-    /*        return block;*/
-    /*    };*/
-    /*    interp[i, j] << block(a), block(delta), block(gamma), M<6, 2>::Zero();*/
-    /*}*/
 
     return interp;
 }
@@ -349,11 +362,37 @@ int main()
                          V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
 
     grid<M<6, 2>> interp = calculate_interp(p, n);
-    
 
-    for (auto [i, j] : indices(interp)) {
-        std::println("i = {}, j = {}", i, j);
-        std::cout << interp[i, j] << "\n\n";
+    M<12, 4> interp00;
+    interp00 << interp[0, 0], interp[0, 1], interp[1, 0], interp[1, 1];
+
+    size_t res = 100;
+
+    auto [y, dy_ds] = calculate_coons(res, interp00);
+
+    grid<V<3>> n00{res + 1, res + 1};
+    grid<double> h00{res + 1, res + 1};
+    grid<V<3>> x00{res + 1, res + 1};
+
+    for (auto [i, j] : indices(y)) {
+        V<4> blaschke = iota_inv(y[i, j]);
+        n00[i, j] = blaschke.head<3>();
+        h00[i, j] = blaschke.tail<1>().value();
+
+        M<4, 3> blaschke_dy = iota_inv_jacobian(y[i, j]);
+        M<4, 2> blaschke_ds = blaschke_dy * dy_ds[i, j];
+
+        M<3, 2> dn_ds = blaschke_ds.topRows<3>();
+        RV<2> dh_ds = blaschke_ds.bottomRows<1>();
+
+        M<2, 2> nn = dn_ds.transpose() * dn_ds;
+        M<2, 2> nn_inv = nn.inverse();
+        V<2> r = nn_inv * dh_ds.transpose();
+
+        x00[i, j] = h00[i, j] * n00[i, j] + dn_ds * r;
     }
 
+    to_obj("out/coons00.obj", y);
+    to_obj("out/n00.obj", n00);
+    to_obj("out/x00.obj", x00);
 }

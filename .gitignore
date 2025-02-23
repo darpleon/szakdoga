@@ -2,3 +2,4 @@ build
 .cache
 session.vim
 *.obj
+out/*
