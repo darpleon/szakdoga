@@ -321,6 +321,7 @@ V<3> calculate_delta_star(const grid<V<3>>& a, size_t i, size_t j)
     }
 }
 
+constexpr double deriv_magnitude = 0.5;
 
 grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
 {
@@ -333,7 +334,7 @@ grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
         M<4, 3> jac = iota_inv_jacobian(a[i, j]);
         M<3, 3> dn_dy = jac.topRows<3>();
         RV<3> dh_dy = jac.bottomRows<1>();
-        b[i, j] = (p[i, j].transpose() * dn_dy - dh_dy).transpose();
+        b[i, j] = (p[i, j].transpose() * dn_dy - dh_dy).transpose().normalized();
     }
 
     grid<M<6, 2>> interp{3, 3};
@@ -341,9 +342,11 @@ grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
     for (auto [i, j] : range2d{3, 3}) {
         V<3> gamma_star = calculate_gamma_star(a, i, j);
         V<3> gamma = gamma_star - b[i, j].dot(gamma_star) * b[i, j];
+        gamma *= deriv_magnitude;
 
         V<3> delta_star = calculate_delta_star(a, i, j);
         V<3> delta = delta_star - b[i, j].dot(delta_star) * b[i, j];
+        delta *= deriv_magnitude;
 
         interp[i, j] << a[i, j], delta, gamma, V<3>::Zero();
     }
@@ -351,33 +354,16 @@ grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
     return interp;
 }
 
-int main()
+std::array<grid<V<3>>, 2> from_isotropic_coons(const M<12, 4>& interp_block, const grid<V<3>>& y, const grid<M<3, 2>>& dy_ds)
 {
-    grid<V<3>> p{3, 3, { V<3>{0., 0., 0.},          V<3>{0., -11./72., -1./12.},    V<3>{0., -2./9., -1./3.},
-                         V<3>{11./72., 0., 1./12.}, V<3>{7./36., -7./36., 0.},      V<3>{23./72., -11./36., -1./4.},
-                         V<3>{2./9., 0., 1./3.},    V<3>{11./36., -23./72., 1./4.}, V<3>{5./9., -5./9., 0.} }};
-
-    grid<V<3>> n{3, 3, { V<3>{0., 0., -1.},       V<3>{0., 4./5., -3./5.},    V<3>{0., 1., 0.},
-                         V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
-                         V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
-
-    grid<M<6, 2>> interp = calculate_interp(p, n);
-
-    M<12, 4> interp00;
-    interp00 << interp[0, 0], interp[0, 1], interp[1, 0], interp[1, 1];
-
-    size_t res = 100;
-
-    auto [y, dy_ds] = calculate_coons(res, interp00);
-
-    grid<V<3>> n00{res + 1, res + 1};
-    grid<double> h00{res + 1, res + 1};
-    grid<V<3>> x00{res + 1, res + 1};
+    size_t res = y.n() - 1;
+    grid<V<3>> n{res + 1, res + 1};
+    grid<V<3>> x{res + 1, res + 1};
 
     for (auto [i, j] : indices(y)) {
         V<4> blaschke = iota_inv(y[i, j]);
-        n00[i, j] = blaschke.head<3>();
-        h00[i, j] = blaschke.tail<1>().value();
+        n[i, j] = blaschke.head<3>();
+        double h = blaschke.tail<1>().value();
 
         M<4, 3> blaschke_dy = iota_inv_jacobian(y[i, j]);
         M<4, 2> blaschke_ds = blaschke_dy * dy_ds[i, j];
@@ -389,10 +375,34 @@ int main()
         M<2, 2> nn_inv = nn.inverse();
         V<2> r = nn_inv * dh_ds.transpose();
 
-        x00[i, j] = h00[i, j] * n00[i, j] + dn_ds * r;
+        x[i, j] = h * n[i, j] + dn_ds * r;
     }
 
+    return {std::move(x), std::move(n)};
+}
+
+int main()
+{
+    grid<V<3>> p{3, 3, { V<3>{0., 0., 0.},          V<3>{0., -11./72., -1./12.},    V<3>{0., -2./9., -1./3.},
+                         V<3>{11./72., 0., 1./12.}, V<3>{7./36., -7./36., 0.},      V<3>{23./72., -11./36., -1./4.},
+                         V<3>{2./9., 0., 1./3.},    V<3>{11./36., -23./72., 1./4.}, V<3>{5./9., -5./9., 0.} }};
+
+    grid<V<3>> n_input{3, 3, { V<3>{0., 0., -1.},       V<3>{0., 4./5., -3./5.},    V<3>{0., 1., 0.},
+                         V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
+                         V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
+
+    grid<M<6, 2>> interp = calculate_interp(p, n_input);
+
+    M<12, 4> interp00;
+    interp00 << interp[0, 0], interp[0, 1], interp[1, 0], interp[1, 1];
+
+    size_t res = 100;
+
+    auto [y, dy_ds] = calculate_coons(res, interp00);
+
+    auto [x, n] = from_isotropic_coons(interp00, y, dy_ds);
+
     to_obj("out/coons00.obj", y);
-    to_obj("out/n00.obj", n00);
-    to_obj("out/x00.obj", x00);
+    to_obj("out/n00.obj", n);
+    to_obj("out/x00.obj", x);
 }
