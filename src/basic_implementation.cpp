@@ -152,18 +152,28 @@ V<4> iota_inv(V<3> a)
                                                           2 * a.z()};
 }
 
-M<4, 3> iota_inv_jacobian(V<3> a)
+M<4, 3> jacobian_numerator(V<3> a)
 {
     const double& x = a.x();
     const double& y = a.y();
     const double& z = a.z();
     double x2 = a.x() * a.x();
     double y2 = a.y() * a.y();
-    double one_plus = (1. + x2 + y2);
-    return 2. / (one_plus * one_plus) * M<4, 3>{ {1. - x2 + y2,  -2. * x * y, 0.},
-                                             { -2. * x * y, 1. + x2 - y2, 0.},
-                                             {     2. * x,      2. * y, 0.},
-                                             { -2. * x * z,  -2. * y * z, 1.} };
+    return M<4, 3>{ {1. - x2 + y2,  -2. * x * y, 0.},
+                    { -2. * x * y, 1. + x2 - y2, 0.},
+                    {     2. * x,      2. * y, 0.},
+                    { -2. * x * z,  -2. * y * z, 1.} };
+}
+
+double jacobian_q(V<3> a)
+{
+    return (1. + a[0] * a[0] + a[1] * a[1]);
+}
+
+M<4, 3> iota_inv_jacobian(V<3> a)
+{
+    double q = jacobian_q(a);
+    return 2. / (q * q) * jacobian_numerator(a);
 }
 
 double F0(double t)
@@ -354,7 +364,7 @@ grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
     return interp;
 }
 
-std::array<grid<V<3>>, 2> from_isotropic_coons(const M<12, 4>& interp_block, const grid<V<3>>& y, const grid<M<3, 2>>& dy_ds)
+std::array<grid<V<3>>, 2> from_isotropic_coons(const grid<V<3>>& y, const grid<M<3, 2>>& dy_ds)
 {
     size_t res = y.n() - 1;
     grid<V<3>> n{res + 1, res + 1};
@@ -365,17 +375,23 @@ std::array<grid<V<3>>, 2> from_isotropic_coons(const M<12, 4>& interp_block, con
         n[i, j] = blaschke.head<3>();
         double h = blaschke.tail<1>().value();
 
-        M<4, 3> blaschke_dy = iota_inv_jacobian(y[i, j]);
-        M<4, 2> blaschke_ds = blaschke_dy * dy_ds[i, j];
+        M<4, 3> jacobian_numer = jacobian_numerator(y[i, j]);
+        M<3, 2> MM = jacobian_numer.topLeftCorner<3, 2>();
+        RV<2> kxy = jacobian_numer.bottomLeftCorner<1, 2>();
 
-        M<3, 2> dn_ds = blaschke_ds.topRows<3>();
-        RV<2> dh_ds = blaschke_ds.bottomRows<1>();
+        M<2, 2> yxy = dy_ds[i, j].topRows<2>();
+        RV<2> yz = dy_ds[i, j].bottomRows<1>();
 
-        M<2, 2> nn = dn_ds.transpose() * dn_ds;
-        M<2, 2> nn_inv = nn.inverse();
-        V<2> r = nn_inv * dh_ds.transpose();
+        M<2, 2> yxyp;
+        yxyp << yxy(1, 1), -yxy(0, 1), -yxy(1, 0), yxy(0, 0);
 
-        x[i, j] = h * n[i, j] + dn_ds * r;
+        double yxyd = yxy.determinant();
+
+        double q = jacobian_q(y[i, j]);
+
+        V<3> emb = 1. / (q * q * yxyd) * MM * (yxyd * kxy + yz * yxyp).transpose();
+
+        x[i, j] = h * n[i, j] + emb;
     }
 
     return {std::move(x), std::move(n)};
@@ -400,7 +416,7 @@ int main()
 
     auto [y, dy_ds] = calculate_coons(res, interp00);
 
-    auto [x, n] = from_isotropic_coons(interp00, y, dy_ds);
+    auto [x, n] = from_isotropic_coons(y, dy_ds);
 
     to_obj("out/coons00.obj", y);
     to_obj("out/n00.obj", n);
