@@ -1,137 +1,14 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
-#include <format>
-#include <iostream>
 #include <array>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
-#include <iterator>
-#include <fstream>
 #include <print>
 
-/*using v<3> = Eigen::Vector3d;*/
-/*using v<4> = Eigen::Vector4d;*/
-/*using rv2 = Eigen::RowVector2d;*/
-/*using rv<3> = Eigen::RowVector3d;*/
-
-template <int N>
-using V = Eigen::Matrix<double, N, 1>;
-
-template <int N>
-using RV = Eigen::Matrix<double, 1, N>;
-
-template <int R, int C>
-using M = Eigen::Matrix<double, R, C>;
-
-
-template<typename T>
-class grid
-{
-public:
-    grid(size_t n, size_t m)
-        : _n{n}, _m{m}, _d(n * m)
-    {
-    }
-
-    grid(grid&& g) : _n{g._n}, _m{g._m}, _d{std::move(g._d)} {}
-
-    size_t n() const
-    {
-        return _n;
-    }
-
-    size_t m() const
-    {
-        return _m;
-    }
-
-    grid(size_t n, size_t m, std::initializer_list<T> contents)
-        : _n(n), _m(m), _d(n * m)
-    {
-        std::ranges::copy(contents.begin(), contents.end(), _d.begin());
-    }
-
-    const T& operator[](size_t i, size_t j) const
-    {
-        return _d[i * _n + j];
-    }
-
-    T& operator[](size_t i, size_t j)
-    {
-        return _d[i * _n + j];
-    }
-
-    using iterator = std::vector<T>::iterator;
-    using const_iterator = std::vector<T>::const_iterator;
-
-    iterator begin() { return _d.begin(); }
-    iterator end() { return _d.end(); }
-    const_iterator begin() const { return _d.begin(); }
-    const_iterator end() const { return _d.end(); }
-    const_iterator cbegin() const { return _d.cbegin(); }
-    const_iterator cend() const { return _d.cend(); }
-
-private:
-    const size_t _n, _m;
-    std::vector<T> _d;
-
-};
-
-struct idx2d
-{
-    idx2d(size_t m, size_t i, size_t j) :m(m), idx{i, j} {}
-
-    std::array<size_t, 2> operator*()
-    {
-        return idx;
-    }
-
-    void operator++()
-    {
-        if (idx[1] == m - 1) {
-            ++idx[0];
-            idx[1] = 0;
-        }
-        else {
-            ++idx[1];
-        }
-    }
-
-    bool operator!=(const idx2d& rhs) const
-    {
-        return idx != rhs.idx;
-    }
-private:
-    std::array<size_t, 2> idx;
-    size_t m;
-};
-
-class range2d
-{
-public:
-    range2d(size_t n, size_t m) :n(n), m(m) {}
-
-    idx2d begin()
-    {
-        return idx2d {m, 0, 0};
-    }
-
-    idx2d end()
-    {
-        return idx2d {m, n, 0};
-    }
-
-private:
-    size_t n, m;
-};
-
-
-template <typename T>
-range2d indices(const grid<T>& g)
-{
-    return range2d(g.n(), g.m());
-}
+#include "grid.hpp"
+#include "io.hpp"
+#include "matrix_utility.hpp"
 
 
 double h(V<3> p, V<3> n)
@@ -226,38 +103,6 @@ V<4> hermite_d(double t)
     return V<4>{F0d(t), G0d(t), F1d(t), G1d(t)};
 }
 
-void to_obj(std::string filename, const grid<V<3>>& vertices)
-{
-    std::stringstream vertex_stream;
-    std::stringstream face_stream;
-
-    for (const V<3>& v : vertices) {
-        std::println(vertex_stream, "v {} {} {}", v[0], v[1], v[2]);
-    }
-    size_t n = vertices.n();
-    size_t m = vertices.m();
-    for (auto [i, j] : range2d{n - 1, m - 1}) {
-        size_t tl = m * i + j + 1; 
-        size_t tr = tl + 1;
-        size_t bl = tl + m;
-        size_t br = bl + 1;
-        std::println(face_stream, "f {} {} {}", tl, tr, bl);
-        std::println(face_stream, "f {} {} {}", tr, bl, br);
-    }
-
-    std::ofstream output(filename);
-    output << vertex_stream.rdbuf() << face_stream.rdbuf();
-}
-
-template <int S, int R, int C>
-M<S * R, S * C> inflate(M<R, C> m)
-{
-    M<S * R, S * C> f;
-    for (auto [i, j] : range2d{R, C}) {
-        f.template block<S, S>(S * i, S * j) = m(i, j) * M<S, S>::Identity();
-    }
-    return f;
-}
 
 double ddivide(size_t a, size_t b)
 {
