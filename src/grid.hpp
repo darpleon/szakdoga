@@ -6,41 +6,53 @@
 #include <array>
 #include <vector>
 
+class range2d;
+
 template<typename T>
 class grid
 {
 public:
     grid(size_t n, size_t m)
-        : _n{n}, _m{m}, _d(n * m)
+        : _size{n, m}, _d(n * m)
     {
     }
 
-    grid(grid&& g) : _n{g._n}, _m{g._m}, _d{std::move(g._d)} {}
+    grid(std::array<size_t, 2> size)
+        : _size{size}, _d(size[0] * size[1])
+    {
+    }
+
+    grid(grid&& g) : _size{g._size}, _d{std::move(g._d)} {}
+
+    std::array<size_t, 2> size() const
+    {
+        return _size;
+    }
 
     size_t n() const
     {
-        return _n;
+        return _size[0];
     }
 
     size_t m() const
     {
-        return _m;
+        return _size[1];
     }
 
     grid(size_t n, size_t m, std::initializer_list<T> contents)
-        : _n(n), _m(m), _d(n * m)
+        : _size{n, m}, _d(n * m)
     {
         std::ranges::copy(contents.begin(), contents.end(), _d.begin());
     }
 
     const T& operator[](size_t i, size_t j) const
     {
-        return _d[i * _n + j];
+        return _d[i * _size[0] + j];
     }
 
     T& operator[](size_t i, size_t j)
     {
-        return _d[i * _n + j];
+        return _d[i * _size[0] + j];
     }
 
     using iterator = std::vector<T>::iterator;
@@ -54,7 +66,7 @@ public:
     const_iterator cend() const { return _d.cend(); }
 
 private:
-    const size_t _n, _m;
+    const std::array<size_t, 2> _size;
     std::vector<T> _d;
 
 };
@@ -62,6 +74,8 @@ private:
 struct idx2d
 {
     idx2d(size_t m, size_t i, size_t j) :m(m), idx{i, j} {}
+
+    idx2d(size_t m, std::array<size_t, 2> a) :m(m), idx{a} {}
 
     std::array<size_t, 2> operator*()
     {
@@ -83,6 +97,16 @@ struct idx2d
     {
         return idx != rhs.idx;
     }
+
+    idx2d operator+(std::array<size_t, 2> a)
+    {
+        return idx2d(m, idx[0] + a[0], idx[1] + a[1]);
+    }
+    
+    idx2d operator-(std::array<size_t, 2> a)
+    {
+        return idx2d(m, idx[0] - a[0], idx[1] - a[1]);
+    }
 private:
     std::array<size_t, 2> idx;
     size_t m;
@@ -103,13 +127,23 @@ public:
         return idx2d {m, n, 0};
     }
 
+    range2d operator+(std::array<size_t, 2> a)
+    {
+        return range2d{n + a[0], m + a[1]};
+    }
+
+    range2d operator-(std::array<size_t, 2> a)
+    {
+        return range2d{n - a[0], m - a[1]};
+    }
+
 private:
     size_t n, m;
 };
 
 
 template <typename T>
-range2d indices(const grid<T>& g)
+range2d range(const grid<T>& g)
 {
     return range2d(g.n(), g.m());
 }

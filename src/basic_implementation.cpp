@@ -180,10 +180,10 @@ constexpr double deriv_magnitude = 0.5;
 
 grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
 {
-    grid<V<3>> a{3, 3};
-    grid<V<3>> b{3, 3};
+    grid<V<3>> a{p.size()};
+    grid<V<3>> b{p.size()};
 
-    for (auto [i, j] : range2d{3, 3}) {
+    for (auto [i, j] : range(p)) {
         double h = p[i, j].dot(n[i, j]);
         a[i, j] = iota(n[i, j], h);
         M<4, 3> jac = iota_inv_jacobian(a[i, j]);
@@ -192,9 +192,9 @@ grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
         b[i, j] = (p[i, j].transpose() * dn_dy - dh_dy).transpose().normalized();
     }
 
-    grid<M<6, 2>> interp{3, 3};
+    grid<M<6, 2>> interp{p.size()};
 
-    for (auto [i, j] : range2d{3, 3}) {
+    for (auto [i, j] : range(p)) {
         V<3> gamma_star = calculate_gamma_star(a, i, j);
         V<3> gamma = gamma_star - b[i, j].dot(gamma_star) * b[i, j];
         gamma *= deriv_magnitude;
@@ -215,7 +215,7 @@ std::array<grid<V<3>>, 2> from_isotropic_coons(const grid<V<3>>& y, const grid<M
     grid<V<3>> n{res + 1, res + 1};
     grid<V<3>> x{res + 1, res + 1};
 
-    for (auto [i, j] : indices(y)) {
+    for (auto [i, j] : range(y)) {
         V<4> blaschke = iota_inv(y[i, j]);
         n[i, j] = blaschke.head<3>();
         double h = blaschke.tail<1>().value();
@@ -257,13 +257,12 @@ int main()
     M<12, 4> interp00;
     interp00 << interp[0, 0], interp[0, 1], interp[1, 0], interp[1, 1];
 
-    size_t res = 100;
+    size_t res = 5;
 
     auto [y, dy_ds] = calculate_coons(res, interp00);
 
     auto [x, n] = from_isotropic_coons(y, dy_ds);
 
     to_obj("out/coons00.obj", y);
-    to_obj("out/n00.obj", n);
-    to_obj("out/x00.obj", x);
+    to_obj("out/x00.obj", x, n);
 }
