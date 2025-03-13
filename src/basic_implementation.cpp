@@ -10,6 +10,7 @@
 #include "io.hpp"
 #include "matrix_utility.hpp"
 
+namespace numeric_implementation {
 
 double h(V<3> p, V<3> n)
 {
@@ -143,13 +144,6 @@ std::pair<grid<V<3>>, grid<M<3, 2>>> calculate_coons(size_t res, const M<12, 4>&
     return {std::move(y), std::move(dy_ds)};
 }
 
-std::function<double(size_t)> interp_func(const std::vector<double>& t)
-{
-    return [t] (size_t i) {
-        return t[i] * 2.;
-    };
-}
-
 V<3> calculate_gamma_star(const grid<V<3>>& a, size_t i, size_t j)
 {
     if (i == 0) {
@@ -265,4 +259,8 @@ int main()
 
     to_obj("out/coons00.obj", y);
     to_obj("out/x00.obj", x, n);
+
+    return 0;
+}
+
 }

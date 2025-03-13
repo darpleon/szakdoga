@@ -22,6 +22,14 @@ add_executable(
 target_link_libraries(main function)
 
 add_executable(
+  poly
+  src/poly_implementation.cpp
+  src/io.cpp
+  src/basic_implementation.cpp
+)
+target_link_libraries(poly function)
+
+add_executable(
   basic
   src/basic_implementation.cpp
   src/io.cpp

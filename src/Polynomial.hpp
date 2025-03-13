@@ -518,6 +518,13 @@ Polynomial<coeff_type> operator-(coeff_type coeff, Variable x)
 
 
 template <typename coeff_type>
+Polynomial<coeff_type> operator-(coeff_type coeff, const Polynomial<coeff_type>& p)
+{
+    return -(p - coeff);
+}
+
+
+template <typename coeff_type>
 Polynomial<coeff_type> operator*(const PowerPermutation& pp, coeff_type coeff)
 {
     return Polynomial<coeff_type>{{pp, coeff}};
