@@ -45,50 +45,30 @@ std::array<Polynomial<double>, 3> calculate_coons(const M<12, 4>& interp_data, V
     return C;
 }
 
-}
-
-namespace fi = function_implementation;
-
-int main()
+std::array<std::array<Rational<double>, 3>, 2> from_isotropic_coons(std::array<PD, 3> y, Variable u, Variable v)
 {
-    grid<V<3>> p{3, 3, { V<3>{0., 0., 0.},          V<3>{0., -11./72., -1./12.},    V<3>{0., -2./9., -1./3.},
-                         V<3>{11./72., 0., 1./12.}, V<3>{7./36., -7./36., 0.},      V<3>{23./72., -11./36., -1./4.},
-                         V<3>{2./9., 0., 1./3.},    V<3>{11./36., -23./72., 1./4.}, V<3>{5./9., -5./9., 0.} }};
+    std::array<PD, 3> deriv_u = deriv(y, u);
+    std::array<PD, 3> deriv_v = deriv(y, v);
 
-    grid<V<3>> n_input{3, 3, { V<3>{0., 0., -1.},       V<3>{0., 4./5., -3./5.},    V<3>{0., 1., 0.},
-                         V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
-                         V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
-
-    grid<M<6, 2>> interp_data = ni::calculate_interp(p, n_input);
-
-    M<12, 4> interp00;
-    interp00 << interp_data[0, 0], interp_data[0, 1], interp_data[1, 0], interp_data[1, 1];
-
-    Variable u, v;
-
-    std::array<PD, 3> c00 = fi::calculate_coons(interp00, u, v);
-    std::array<PD, 3> c00_du = fi::deriv(c00, u);
-    std::array<PD, 3> c00_dv = fi::deriv(c00, v);
-
-    PD cx2 = c00[0] * c00[0];
-    PD cy2 = c00[1] * c00[1];
-    PD cxy_prod = c00[0] * c00[1];
+    PD cx2 = y[0] * y[0];
+    PD cy2 = y[1] * y[1];
+    PD cxy_prod = y[0] * y[1];
     PD square_sum = cx2 + cy2;
     PD square_diff = cx2 - cy2;
 
-    std::array<PD, 3> Mu = {1. - square_diff, -2. * cxy_prod, 2. * c00[0]};
-    std::array<PD, 3> Mv = {-2. * cxy_prod, 1. + square_diff, 2. * c00[1]};
-    std::array<PD, 2> kxy = {-2. * c00[0] * c00[2], -2. * c00[1] * c00[2]};
+    std::array<PD, 3> Mu = {1. - square_diff, -2. * cxy_prod, 2. * y[0]};
+    std::array<PD, 3> Mv = {-2. * cxy_prod, 1. + square_diff, 2. * y[1]};
+    std::array<PD, 2> kxy = {-2. * y[0] * y[2], -2. * y[1] * y[2]};
 
-    std::array<PD, 3> m = {2. * c00[0], 2. * c00[1], -1. + square_sum};
-    PD k = 2. * c00[2];
+    std::array<PD, 3> m = {2. * y[0], 2. * y[1], -1. + square_sum};
+    PD k = 2. * y[2];
 
     PD q = 1. + square_sum;
-    PD Yxy_det = c00_du[0] * c00_dv[1] - c00_dv[0] * c00_du[1];
+    PD Yxy_det = deriv_u[0] * deriv_v[1] - deriv_v[0] * deriv_u[1];
 
     std::array<PD, 2> mul;
-    mul[0] = Yxy_det * kxy[0] + c00_du[2] * c00_dv[1] - c00_dv[2] * c00_du[1];
-    mul[1] = Yxy_det * kxy[1] - c00_du[2] * c00_dv[0] + c00_dv[2] * c00_du[0];
+    mul[0] = Yxy_det * kxy[0] + deriv_u[2] * deriv_v[1] - deriv_v[2] * deriv_u[1];
+    mul[1] = Yxy_det * kxy[1] - deriv_u[2] * deriv_v[0] + deriv_v[2] * deriv_u[0];
 
     std::array<PD, 3> emb_numer;
     for (size_t i = 0; i < 3; ++i) {
@@ -120,21 +100,54 @@ int main()
         x[i] = numer[i] / denom;
     }
 
-    size_t res = 5;
+    return {x, n};
+}
 
-    grid<V<3>> x_val{res + 1, res + 1};
-    grid<V<3>> n_val{res + 1, res + 1};
+}
 
-    for (auto [i, j] : range2d{res + 1, res + 1}) {
-        double u_val = ni::ddivide(i, 5);
-        double v_val = ni::ddivide(j, 5);
-        for(size_t k = 0; k < 3; ++k) {
-            x_val[i, j][k] = x[k].evaluate<double>({{u, u_val}, {v, v_val}});
-            n_val[i, j][k] = n[k].evaluate<double>({{u, u_val}, {v, v_val}});
+namespace fi = function_implementation;
+
+int main()
+{
+    grid<V<3>> p{3, 3, { V<3>{0., 0., 0.},          V<3>{0., -11./72., -1./12.},    V<3>{0., -2./9., -1./3.},
+                         V<3>{11./72., 0., 1./12.}, V<3>{7./36., -7./36., 0.},      V<3>{23./72., -11./36., -1./4.},
+                         V<3>{2./9., 0., 1./3.},    V<3>{11./36., -23./72., 1./4.}, V<3>{5./9., -5./9., 0.} }};
+
+    grid<V<3>> n_input{3, 3, { V<3>{0., 0., -1.},       V<3>{0., 4./5., -3./5.},    V<3>{0., 1., 0.},
+                         V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
+                         V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
+
+    grid<M<6, 2>> interp_data = ni::calculate_interp(p, n_input);
+
+    std::vector<std::array<grid<V<3>>, 2>> patches;
+    for (auto [i, j] : range2d{2, 2}) {
+        M<12, 4> interp;
+        interp << interp_data[i + 0, j + 0], interp_data[i + 0, j + 1],
+                  interp_data[i + 1, j + 0], interp_data[i + 1, j + 1];
+
+        Variable u, v;
+
+        std::array<PD, 3> c = fi::calculate_coons(interp, u, v);
+        auto [x, n] = fi::from_isotropic_coons(c, u, v);
+
+        size_t res = 10;
+
+        grid<V<3>> x_val{res + 1, res + 1};
+        grid<V<3>> n_val{res + 1, res + 1};
+
+        for (auto [i, j] : range2d{res + 1, res + 1}) {
+            double u_val = ni::ddivide(i, res);
+            double v_val = ni::ddivide(j, res);
+            for(size_t k = 0; k < 3; ++k) {
+                x_val[i, j][k] = x[k].evaluate<double>({{u, u_val}, {v, v_val}});
+                n_val[i, j][k] = n[k].evaluate<double>({{u, u_val}, {v, v_val}});
+            }
         }
+
+        patches.push_back({std::move(x_val), std::move(n_val)});
     }
 
-    to_obj("out/x00_poly.obj", x_val, n_val);
+    to_obj("out/x00_poly.obj", patches);
 
 
     return 0;

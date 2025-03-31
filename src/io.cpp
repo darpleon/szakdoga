@@ -29,10 +29,10 @@ void print_obj_faces(std::ostream& stream, size_t n, size_t m)
     }
 }
 
-void print_obj_faces_normals(std::ostream& stream, size_t n, size_t m)
+void print_obj_faces_normals(std::ostream& stream, size_t n, size_t m, size_t start)
 {
     for (auto [i, j] : range2d{n - 1, m - 1}) {
-        size_t tl = m * i + j + 1; 
+        size_t tl = start + 1 + m * i + j; 
         size_t tr = tl + 1;
         size_t bl = tl + m;
         size_t br = bl + 1;
@@ -68,6 +68,32 @@ void to_obj(std::string filename, const grid<V<3>>& vertices, const grid<V<3>>& 
     size_t n = vertices.n();
     size_t m = vertices.m();
     print_obj_faces_normals(face_stream, n, m);
+
+    std::ofstream output{filename};
+    output << vertex_stream.rdbuf() << '\n';
+    output << normal_stream.rdbuf() << '\n';
+    output << face_stream.rdbuf();
+}
+
+void to_obj(std::string filename, const std::vector<std::array<grid<V<3>>, 2>>& patches)
+{
+    std::stringstream vertex_stream;
+    std::stringstream normal_stream;
+    std::stringstream face_stream;
+
+    size_t group_id = 0;
+    size_t index_start = 0;
+    for (const auto& [vertices, normals] : patches) {
+        print_obj_vertices(vertex_stream, vertices);
+        print_obj_normals(normal_stream, normals);
+
+        size_t n = vertices.n();
+        size_t m = vertices.m();
+        std::println(face_stream, "g {}", group_id);
+        print_obj_faces_normals(face_stream, n, m, index_start);
+        ++group_id;
+        index_start += n * m;
+    }
 
     std::ofstream output{filename};
     output << vertex_stream.rdbuf() << '\n';
