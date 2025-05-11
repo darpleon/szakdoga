@@ -13,8 +13,51 @@
 
 #chapter[Bevezetés]
 = CAD/CAM
-= Racionális görbék/felületek
+a
+
+= Parametrikus görbék, felületek
+Compu
+
+= Polinomok, racionális függvények
+Amikor geometriai alakzatokat szeretnénk szoftveresen reprezentálni,
+figyelembe kell vennünk a számítógépek technikai limitációit.
+A reprezentációban megjelenő matematikai kifejezéseket sokszor ki kell értékelnünk,
+ennek az időigénye és pontossága pedig drasztikus mértékben függ a kifejezés jellegétől.
+
+Az összeadást, kivonást és szorzást nagyon egyszerű algoritmusokkal,
+akár 1 CPU-ciklus alatt végre tudjuk hajtani,
+// TODO: adatszerkezet?
+az eredmény pontossága csak a számok mögötti adatszerkezet (általában floating-point) limitációitól függ.
+
+Azokat a függvényeket, amik kifejezhetők véges sok összeadással, kivonással és szorzással,
+polinomoknak hívjuk. Egy egyváltozós polinom kanonikus alakja 
+$
+  P(x) = sum_(k = 0)^n a_k x^k
+$
+
+Az osztás egy kissé költségesebb (illetve adott esetben pontatlanabb) művelet.
+Ha az osztást is megengedjük, az így kifejezhető függvényeket racionális függvényeknek hívjuk.
+Minden racionális függvény leírható az alábbi alakban
+$
+  R(x) = A(x) / B(x)
+$
+ahol $A(x)$ és $B(x)$ polinomok.
+Ez kedvező, mert így egy racionális függvény kiértékelésekor elég csak egyszer osztani.
+
+Sok nevezetes függvényt (például $sqrt(x)$, $sin(x)$, $ln(x)$)
+nem lehet kifejezni véges sok alapművelettel,
+értéküket csak megközelíteni tudjuk.
+Ezt vagy egy közelítő polinommal/racionálissal tesszük (pl Taylor-sor, Padé közelítő),
+vagy ismételt, inkrementálisan közelítő lépéseket hajtunk végre (pl Newton-módszer).
+
+Ebből következik, hogy az ilyen függvények kiértékelése lassabb, pontatlanabb, vagy mindkettő,
+mint egy alacsony fokú polinom vagy racionális függvény.
+Így lehetőség szerint el akarjuk őket kerülni egy CAD környezetben.
+
 = Kontrollpont-alapú reprezentáció
+A polinomok szokásos reprezentációjában látható együtthatók
+nem bírnak semmiféle
+
 = Parametrikus sebesség
 
 #chapter[PH Görbék]
@@ -50,6 +93,7 @@ $
 Ha feltételezzük, hogy $vc(n)$ egység hosszúságú, akkor $h$ nem más,
 mint az érintősík távolsága az origótól.
 A $h(vc(s))$ függvényt a felület support függvényének hívjuk.
+// TODO: h(s) vagy h(n)?
 
 Ezzel a képlettel már át tudjuk transzformálni az interpolálandó adatpontokat a duális térbe.
 Ahhoz, hogy a végeredményt leírhassuk a "primális" térben, szükségünk lesz az inverzre is,
@@ -129,16 +173,167 @@ vec(dd(vc(n), vc(y)), dd(h, vc(y))) = dd(vc(b), vc(y))= 2 / (1 + y_x^2 + y_y^2)^
                                    -2y_x y_z,         -2y_y y_z, 1)
 $
 
-Tehát az izotróp térben kiválasztott kezdeti/végponti irányvektoroknak
+Tehát az izotróp térben kiválasztott kezdeti/végponti deriváltaknak
 illeszkedniük kell a $vc(v)$ normálvektorú, origót tartalmazó síkra.
 
+= Irányvektorok meghatározása
+Jelenleg rendelkezünk egy négyzetrács szerkezetű ponthálózattal,
+illetve pontonként egy síkkal.
+Mivel ezekből még nem következnek egyértelműen a pontokhoz rendelendő deriváltak,
+heurisztikát fogunk alkalmazni.
+
+Legyen $vc(a)_(i, j)$ a hálózat egy pontja, ahol $i$ a pont "$u$ irányban", $j$ pedig a "$v$ irányban" vett indexe.
+Legyen továbbá $n$ és $m$ a legmagasabb $i$, illetve $j$ index.
+Jelölje $vc(gamma)_(i, j)$ a felület $u$ szerinti deriváltját az $vc(a)_(i, j)$ pontban,
+$vc(delta)_(i, j)$ pedig a $v$ szerinti deriváltat ugyanitt.
+
+// TODO: egy kis szóbeli magyarázat?
+Ha $vc(a)_(i, j)$ a pontháló szélén van
+#centered_split(
+  $
+    vc(gamma)^*_(0, j) =& vc(a)_(1, j) - vc(a)_(0, j) \
+    vc(gamma)^*_(n, j) =& vc(a)_(n, j) - vc(a)_(n - 1, j) \
+  $,
+  $
+    vc(delta)^*_(i, 0) =& vc(a)_(i, 1) - vc(a)_(i, 0) \
+    vc(delta)^*_(i, n) =& vc(a)_(i, n) - vc(a)_(i, n - 1) \
+  $
+)
+
+Egyébként a két vektort átlagoljuk
+#centered_split(
+  $
+    vc(gamma)^*_(i, j) =& (vc(a)_(i + 1, j) - vc(a)_(i - 1, j)) / 2 \
+  $,
+  $
+    vc(delta)^*_(i, j) =& (vc(a)_(i, j + 1) - vc(a)_(i, j - 1)) / 2 \
+  $
+)
+
+A kapott vektorokat még le kell vetítenünk a $vc(v)$ által meghatározott síkra
+#centered_split(
+  $
+    vc(gamma)_(i, j) = vc(gamma)^*_(i, j) - (vc(v) dot vc(gamma)^*_(i, j)) / (vc(v) dot vc(v)) vc(v)
+  $,
+  $
+    vc(delta)_(i, j) = vc(delta)^*_(i, j) - (vc(v) dot vc(delta)^*_(i, j)) / (vc(v) dot vc(v)) vc(v)
+  $
+)
 
 = Coons-patch
-Ha az adatpontjainkat áttranszformáltuk az izotróp térbe,
-és rendeltünk hozzájuk megfelelő irányvektorokat (erre a következő pontban adunk egy heurisztikát),
-akkor végre konstruálhatunk egy felületet.
+Vegyünk a ponthálónkból egy kis négyzetet,
+ennek sarokpontjait nevezzük $vc(a)_00$, $vc(a)_01$, $vc(a)_10$, $vc(a)_11$-nek.
+Ezek között akarunk interpolálni úgy, hogy a létrejött felületdarab
+a vele szomszédos felületdarabokra $C^1$ folytonossággal illeszkedjen.
+Ehhez egy Coons patch-et fogunk használni.
 
-= Folyamat
+A Coons patch létrehozásához szükségünk van 4 határgörbére \
+($vc(c)_0 (u)$, $vc(c)_1 (u)$, $vc(d)_0 (v)$, $vc(d)_0 (v)$), ahol
+$
+  vc(c)_0 (0) = vc(d)_0 (0) = vc(a)_00 \
+  vc(c)_0 (1) = vc(d)_1 (0) = vc(a)_10 \
+  vc(c)_1 (0) = vc(d)_0 (1) = vc(a)_01 \
+  vc(c)_1 (1) = vc(d)_1 (1) = vc(a)_11 \
+$
+
+valamint egy $0$ és $1$ között interpoláló $F(t)$ függvényre.
+Az egyszerűség kedvéért a függvény tükörképét is nevezzük meg
+$
+  F_0(t) &= 1 - F(t) \
+  F_1(t) &= F(t)
+$
+
+A Coons patch három részből áll.
+Az első kettő interpolál az egymással szemben álló görbék között
+$
+  vc(S)_c (u, v) &= F_0(v) vc(c)_0(u) + F_1(v) vc(c)_1(u) \
+  vc(S)_d (u, v) &= F_0(u) vc(d)_0(v) + F_1(u) vc(d)_1(v)
+$
+
+// TODO: ez általános esetben is ilyen egyszerű?
+A harmadik pedig interpolál a sarokpontok között
+$
+  vc(B) (u, v) &= F_0(u)F_0(v) vc(a)_00 +
+                  F_0(u)F_1(v) vc(a)_01 \
+           &+ med F_1(u)F_0(v) vc(a)_10 +
+                  F_1(u)F_1(v) vc(a)_11
+$
+
+Végül
+$
+  vc(y)(u, v) = vc(S)_c (u, v) + vc(S)_d (u, v) - vc(B)(u, v)
+$
+
+A képletet értelmezhetjük úgy,
+hogy $vc(S)_c$ és $vc(S)_d$ összeadásával "kétszer interpoláltunk" a sarokpontok között,
+ezt kompenzáljuk $vc(B)$ kivonásával.
+
+A Coons patch kifejezhető egy kompaktabb mátrix alakban is
+$
+  vc(y)(u, v) = mat(F_0(u), 1, F_1(u)) dot mat(-vc(a)_00,     vc(d)_00 (v), -vc(a)_01;
+                                             vc(c)_00 (u), 0,          vc(c)_01 (u);
+                                            -vc(a)_10,     vc(d)_10 (v), -vc(a)_11) dot vec(F_0(v), 1, F_1(v))
+$
+
+Az interpoláló függvény általában lineáris vagy köbös szokott lenni.
+Ahhoz, hogy a patch-ek $C^1$ folytonossággal illeszkedjenek, nekünk köbösre lesz szükségünk
+$
+  F_0(t) = 2t^3 - 3t^2 + 1 \
+  F_0(t) = -2t^3 + 3t^2
+$
+
+A határgörbékhez használjunk Hermite interpolációt
+#centered_split(
+$
+  vc(c)_0(u) = vec(F_0(u), G_0(u), F_1(u), G_1(u)) dot
+               vec(vc(a)_00, vc(gamma)_00, vc(a)_10, vc(gamma)_10) \
+  vc(c)_0(u) = vec(F_0(u), G_0(u), F_1(u), G_1(u)) dot
+               vec(vc(a)_00, vc(gamma)_00, vc(a)_10, vc(gamma)_10) \
+$,
+$
+  vc(d)_0(v) = vec(F_0(v), G_0(v), F_1(v), G_1(v)) dot
+               vec(vc(a)_00, vc(gamma)_00, vc(a)_10, vc(gamma)_10) \
+  vc(d)_0(v) = vec(F_0(v), G_0(v), F_1(v), G_1(v)) dot
+               vec(vc(a)_00, vc(gamma)_00, vc(a)_10, vc(gamma)_10) \
+$,
+)
+
+ahol
+$
+  G_0(t) &= t^3 - 2t^2 + t \
+  G_1(t) &= -2t^3 + 3t^2
+$
+
+Mivel $F_0$ és $F_1$ ugyanaz a Coons patch képletében, mint a határgörbékében,
+a kettőt összevonva megspórolhatjuk a görbék külön kiszámolását
+$
+  vc(y)(u, v) = mat(F_0(u), G_0(u), F_1(u), G_1(u))
+  mat(vc(a)_00, vc(delta)_00, vc(a)_01, vc(delta)_01;
+      vc(gamma)_00, vc(0), vc(gamma)_01, vc(0);
+      vc(a)_10, vc(delta)_10, vc(a)_11, vc(delta)_11;
+      vc(gamma)_10, vc(0), vc(gamma)_11, vc(0);)
+  vec(F_0(v), G_0(v), F_1(v), G_1(v))
+$
+
+Mivel nem szorzunk össze azonos változótól függő függvényeket,
+a deriváltak is hasonlóan néznek ki
+$
+  dd(vc(y), u) = mat(F'_0(u), G'_0(u), F'_1(u), G'_1(u))
+  mat(vc(a)_00, vc(delta)_00, vc(a)_01, vc(delta)_01;
+      vc(gamma)_00, vc(0), vc(gamma)_01, vc(0);
+      vc(a)_10, vc(delta)_10, vc(a)_11, vc(delta)_11;
+      vc(gamma)_10, vc(0), vc(gamma)_11, vc(0);)
+  vec(F_0(v), G_0(v), F_1(v), G_1(v)) \
+
+  dd(vc(y), v) = mat(F_0(u), G_0(u), F_1(u), G_1(u))
+  mat(vc(a)_00, vc(delta)_00, vc(a)_01, vc(delta)_01;
+      vc(gamma)_00, vc(0), vc(gamma)_01, vc(0);
+      vc(a)_10, vc(delta)_10, vc(a)_11, vc(delta)_11;
+      vc(gamma)_10, vc(0), vc(gamma)_11, vc(0);)
+  vec(F'_0(v), G'_0(v), F'_1(v), G'_1(v))
+$
+
+= Visszatranszformálás
 
 #chapter[Implementációs részletek]
 = Polinom osztály
