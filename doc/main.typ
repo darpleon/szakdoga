@@ -55,10 +55,38 @@ mint egy alacsony fokú polinom vagy racionális függvény.
 Így lehetőség szerint el akarjuk őket kerülni egy CAD környezetben.
 
 = Kontrollpont-alapú reprezentáció
-A polinomok szokásos reprezentációjában látható együtthatók
-nem bírnak semmiféle
+Ha egy görbét/felületet meghatározó polinomot a szokásos hatványösszeg alakban írunk le,
+az együtthatók nem nyújtanak intuitív betekintést a görbe/felület geometriai tulajdonságaiba.
+A CAD-ben elterjedtek olyan alternatív reprezentációk,
+melyek.
+
+A kontrollpontok tekinthetők együtthatóknak egy másik bázisban,
+de léteznek
+
+
+== Bézier görbék
+Egy $n$-ed fokú Bézier görbét $n + 1$ kontrollponttal reprezentálunk.
+Kiértékelni a De Casteljau algoritmussal tudjuk,
+ami rekurzív lineáris interpolációra épül.
+A Béziér kontrollpontok a görbe mögötti polinom együtthatói a Bernstein-bázisban,
+melynek $k$-adik eleme
+$
+  b_(k, n)(t) = binom(n, k) t^k (1 - t)^(n - k)
+$
+A Béziér görbe $t = 0$-ban áthalad az első kontrollponton,
+$t = 1$-ben az utolsón, a többit pedig közelíti.
+Az első illetve utolsó kettő kontrollpontot összekötő egyenes
+érinti a görbét az első illetve utolsó kontrollpontban.
+Kifejezetten népszerű a harmadfokú Bézier görbe a graphic design területén,
+hiszen egyszerűen lehet állítani a görbe irányait a végpontokban.
+
+== B-Spline
+
+== NURBS
+
 
 = Parametrikus sebesség
+
 
 #chapter[PH Görbék]
 = PH síkgörbék
