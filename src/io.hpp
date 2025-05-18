@@ -16,4 +16,6 @@ void to_obj(std::string filename, const grid<V<3>>& vertices);
 
 void to_obj(std::string filename, const grid<V<3>>& vertices, const grid<V<3>>& normals);
 
-void to_obj(std::string filename, const std::vector<std::array<grid<V<3>>, 2>>& points);
+void to_obj(std::string filename, const std::vector<grid<V<3>>>& patches);
+
+void to_obj(std::string filename, const std::vector<std::array<grid<V<3>>, 2>>& patches);

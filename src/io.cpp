@@ -75,6 +75,29 @@ void to_obj(std::string filename, const grid<V<3>>& vertices, const grid<V<3>>& 
     output << face_stream.rdbuf();
 }
 
+void to_obj(std::string filename, const std::vector<grid<V<3>>>& patches)
+{
+    std::stringstream vertex_stream;
+    std::stringstream face_stream;
+
+    size_t group_id = 0;
+    size_t index_start = 0;
+    for (const auto& vertices : patches) {
+        print_obj_vertices(vertex_stream, vertices);
+
+        size_t n = vertices.n();
+        size_t m = vertices.m();
+        std::println(face_stream, "g {}", group_id);
+        print_obj_faces_normals(face_stream, n, m, index_start);
+        ++group_id;
+        index_start += n * m;
+    }
+
+    std::ofstream output{filename};
+    output << vertex_stream.rdbuf() << '\n';
+    output << face_stream.rdbuf();
+}
+
 void to_obj(std::string filename, const std::vector<std::array<grid<V<3>>, 2>>& patches)
 {
     std::stringstream vertex_stream;
