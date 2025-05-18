@@ -81,6 +81,22 @@ Kifejezetten népszerű a harmadfokú Bézier görbe a graphic design területé
 hiszen egyszerűen lehet állítani a görbe irányait a végpontokban.
 
 == B-Spline
+A B-Spline (Basis-Spline) darabonként definiált bázisfüggvényekből áll,
+melyeknek szegmenseit úgynevezett "csomópontok" (knots) választják el ($t_0, t_1 dots t_m$).
+A bázisfüggvényeket A Cox-de Boor képlettel tudjuk kiértékelni:
+$
+  B_(i, 0)(t) := cases(1 wide "ha" t_i <= t < t_(i + 1), 0 wide "egyébként") \
+  B_(i, n)(t) := (t - t_i) / (t_(i + n) - t_i) + (t_(i + n + 1) - t) / (t_(i + n + 1) - t_(i + 1))
+$
+
+A B-Spline előnye, hogy "maximális folytonosságot" biztosít a szegmensek között,
+$n$-edfokú spline esetén $C^(n - 1)$-et.
+Azonban általános esetben az egyik kontrollponton sem megy át, csak közelíti őket.
+Csomópontok ismétlésével elérhető, hogy a görbe átmenjen egy kontrollponton,
+ez azonban a folytonosság vesztésével jár.
+Mivel ez nem okoz gondot az első és utolsó kontrollpontban,
+ott gyakran megteszik (clamping).
+
 
 == NURBS
 
