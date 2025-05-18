@@ -113,12 +113,18 @@ int main()
                          V<3>{11./72., 0., 1./12.}, V<3>{7./36., -7./36., 0.},      V<3>{23./72., -11./36., -1./4.},
                          V<3>{2./9., 0., 1./3.},    V<3>{11./36., -23./72., 1./4.}, V<3>{5./9., -5./9., 0.} }};
 
-    grid<V<3>> n_input{3, 3, { V<3>{0., 0., -1.},       V<3>{0., 4./5., -3./5.},    V<3>{0., 1., 0.},
+    grid<V<3>> n{3, 3, { V<3>{0., 0., -1.},       V<3>{0., 4./5., -3./5.},    V<3>{0., 1., 0.},
                          V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
                          V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
 
-    grid<M<6, 2>> interp_data = ni::calculate_interp(p, n_input);
+    V<3> center = p[1, 1];
+    for (auto [i, j] : range(p)) {
+        p[i, j] = 1.2 * (p[i, j] - center);
+    }
 
+    grid<M<6, 2>> interp_data = ni::calculate_interp(p, n);
+
+    std::vector<grid<V<3>>> isotropic_patches;
     std::vector<std::array<grid<V<3>>, 2>> patches;
     for (auto [i, j] : range2d{2, 2}) {
         M<12, 4> interp;
@@ -132,6 +138,7 @@ int main()
 
         size_t res = 10;
 
+        grid<V<3>> c_val{res + 1, res + 1};
         grid<V<3>> x_val{res + 1, res + 1};
         grid<V<3>> n_val{res + 1, res + 1};
 
@@ -139,15 +146,19 @@ int main()
             double u_val = ni::ddivide(i, res);
             double v_val = ni::ddivide(j, res);
             for(size_t k = 0; k < 3; ++k) {
+                c_val[i, j][k] = c[k].evaluate<double>({{u, u_val}, {v, v_val}});
                 x_val[i, j][k] = x[k].evaluate<double>({{u, u_val}, {v, v_val}});
                 n_val[i, j][k] = n[k].evaluate<double>({{u, u_val}, {v, v_val}});
             }
         }
 
         patches.push_back({std::move(x_val), std::move(n_val)});
+        isotropic_patches.push_back(std::move(c_val));
     }
 
-    to_obj("out/x00_poly.obj", patches);
+    to_obj("out/data.obj", p, n);
+    to_obj("out/x_iso_poly.obj", isotropic_patches);
+    to_obj("out/x_poly.obj", patches);
 
 
     return 0;
