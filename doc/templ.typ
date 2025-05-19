@@ -1,9 +1,11 @@
 #let todo = text.with(red)
-#let todo_image(content, width: 10cm, height: 10cm) = {
-  rect(width: width, height: height, stroke: red)[
-    #v(1fr)
-    #todo(content)
-    #v(1fr)
+#let todo_image(content, width: 5cm, height: 5cm) = {
+  align(center)[
+    #rect(width: width, height: height, stroke: red)[
+      #v(1fr)
+      #todo(content)
+      #v(1fr)
+    ]
   ]
 }
 

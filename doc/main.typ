@@ -79,6 +79,7 @@ Az első illetve utolsó kettő kontrollpontot összekötő egyenes
 érinti a görbét az első illetve utolsó kontrollpontban.
 Kifejezetten népszerű a harmadfokú Bézier görbe a graphic design területén,
 hiszen egyszerűen lehet állítani a görbe irányait a végpontokban.
+#todo_image("Bézier kép")
 
 == B-Spline
 A B-Spline (Basis-Spline) darabonként definiált bázisfüggvényekből áll,
@@ -89,17 +90,44 @@ $
   B_(i, n)(t) := (t - t_i) / (t_(i + n) - t_i) + (t_(i + n + 1) - t) / (t_(i + n + 1) - t_(i + 1))
 $
 
-A B-Spline előnye, hogy "maximális folytonosságot" biztosít a szegmensek között,
+Ebből következik, hogy egy kontrollpont csak a környező $n + 1$ szegmensre hat ki,
+így lehetőséget ad a lokális kontrollra.
+
+A B-Spline egyik fő előnye, hogy "maximális folytonosságot" biztosít a szegmensek között,
 $n$-edfokú spline esetén $C^(n - 1)$-et.
 Azonban általános esetben az egyik kontrollponton sem megy át, csak közelíti őket.
 Csomópontok ismétlésével elérhető, hogy a görbe átmenjen egy kontrollponton,
 ez azonban a folytonosság vesztésével jár.
 Mivel ez nem okoz gondot az első és utolsó kontrollpontban,
 ott gyakran megteszik (clamping).
+#todo_image("B-Spline kép")
 
 
 == NURBS
+A NURBS valójában nem más, mint a B-Spline általános esete.
+A rövidítés kifejtése: "Non-Uniform Rational B-Spline".
 
+A "non-uniform" rész azt jelenti, hogy nem feltétlenül vannak a csomópontok egyenlő távolságra egymástól,
+így például megengedett a korábban említett csomópont ismétlés is.
+A kontrollpontok sűrítése a görbe/felület adott szakaszain lehetőséget ad
+a finomabb részletek lokális szerkesztésére.
+Az úgynevezett "knot insertion" algoritmussal hozzá tudunk adni egy új csomópontot egy B-Spline-hoz,
+anélkül, hogy annak az alakját változtatnánk.
+
+A "rational" rész azt jelenti, hogy egyszerű polinomok helyett racionális függvények vannak a háttérben.
+Ez a gyakorlatban úgy nyilvánul meg, hogy minden kontrollponthoz rendelünk egy súlyt.
+Számoláskor az adott kontrollponthoz tartozó komponenst beszorozzuk a súllyal,
+majd végül osztunk a bázisfüggvények súlyozott összegével.
+Nagyobb súly hatására a görbe nagyobb mértékben fog húzni az adott kontrollpont irányába.
+
+A súlyokat értelmezhetjük a számítógépes grafikában elterjedt projektív geometriával.
+Elképzelhetjük, hogy a spline egy egyel nagyobb dimenziós térben él,
+ahol az utolsó koordináta a súly (homogén koordináták).
+Így az osztás nem más, mint vetítés az eredeti térbe.
+
+A racionális függvényekre való kiterjeszkedés lehetővé teszi a körívek/gömbfelületek pontos leírását.
+
+#todo_image("NURBS kép")
 
 = Parametrikus sebesség
 Egy $vc(r)(t)$ görbe parametrikus sebessége alatt a görbe deriváltjának nagyságát értjük.
