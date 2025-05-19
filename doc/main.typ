@@ -489,10 +489,87 @@ $
 
 #chapter[Implementációs részletek]
 = overview
-C++
+C++, CMake
 = Lineáris algebra
+
 = Polinom osztály
 A polinomok szimbolikus reprezentációjához és manipulációjához létrehoztam a `Polynomial` osztályt.
+
+== Változók
+Ahelyett, hogy egy polinom együtthatóit pozícionálisan határoznánk meg
+(tehát mondjuk egy `std::vector` $n$-edik eleme felel meg egy névtelen változó $n$-edik hatványához tartozó együtthatónak)
+a polinomunkat egymástól megkülönböztetett szimbolikus változókkal fejezzük ki.
+A változókat a `Variable` osztály reprezentálja.
+Ez a háttérben nem több, mint egy ( `static` ) számláló, ami egyedi azonosítót ad minden változó példánynak.
+
+A változók megkülönböztetése lehetővé teszi,
+hogy műveleteket végezzünk el különböző paraméterekben értendő polinomok között anélkül,
+hogy a paraméterek nem kívánt módon "összemosódjanak".
+Így például össze tudunk adni/szorozni két egyváltozós polinomot úgy,
+hogy az eredmény kétváltozós legyen
+$
+  f(u)g(v) = h(u, v)
+$
+
+== Struktúra
+A `Variable` és `Polynomial` osztályok közti lépés a `PowerPermutation` osztály,
+ami változók hatványpermutációját reprezentálja, például $x^2 y^3 z$.
+A `PowerPermutation` hátterében egy `std::unordered_map` áll,
+ami változókhoz rendel pozitív egész számokat ( `unsigned int` ).
+Így egy `PowerPermutation` példány tetszőlegesen sok változóból állhat.
+Az egyértelműség érdekében, ha egy változóhoz $0$-t rendelnénk, akkor azt az elemet töröljük
+(mondjuk $x^2 y^0 = x^2$). A konstans permutációt (minden hatvány $0$) egy üres map jelöli.
+
+A `Polynomial` adatstruktúrája szintén egy `std::unordered_map`,
+ami `PowerPermutation`-ökhöz rendel együtthatókat.
+A `PowerPermutation` - `coeff_type` párokra a kódban `term`-ként (tag) hivatkozok.
+
+== Konstrukciós szintaxis
+A `Variable`, `PowerPermutation` és `Polynomial` osztályok között definiálva van operator overloading
+bizonyos aritmetikai operációkra,
+amik lehetővé teszik a polinomok konstruálását egy inuitív és ismerős szintaxissal.
+Erre a fontosabb példák
+
+- `operator^(Variable, unsigned int)` $=>$ `PowerPermutation` (hatványozás)
+- `operator*(Variable, Variable)` $=>$ `PowerPermutation`
+- `operator*(PowerPermutation, PowerPermutation)` $=>$ `PowerPermutation`
+- `operator*(coeff_type, PowerPermutation)` $=>$ `Polynomial`
+- `operator+(PowerPermutation, PowerPermutation)` $=>$ `Polynomial`
+- `operator+(Polynomial, Polynomial)` $=>$ `Polynomial`
+- $dots$
+
+Egy példa polinom-konstrukció
+```cpp
+  Polynomial<double> p = (x^3) - 2.0 * x * (y^2) + 1.0
+```
+
+A C++ szintaxisából adódó limitáció, hogy a szorzásjelet nem lehet elhagyni,
+illetve az operátor precedencia miatt a hatványozást szimbolizáló `^` jel használatatakor zárójelezni kell.
+
+// TODO: kicsit sok a szám
+== Funkcionalitás
+
+A `Polynomial` osztályra az alábbi függvények definiáltak:
+
+=== Aritmetikai műveletek
+- összeadás
+- kivonás
+- szorzás
+
+=== Kiértékelés
+Az `evaluate` függvény változó-érték párosok listáját várja
+(pontosabban `std::initializer_list` )
+majd tagonként, a `PowerPermutation`-ökbe behelyettesítve értékel ki.
+Például
+```cpp
+  double result = p.evaluate<double>({{x, 3.0}, {y, -1.0}});
+```
+
+=== Derivált
+A `derivative` függvény egy változót vár, majd az adott változó szerinti deriváltat adja vissza.
+Van egy alternatív verziója, ami változók listáját fogadja el,
+majd a deriváltakat egy ennek megfelelő `std::vector`-ban adja vissza.
+
 == Template
 Az osztályban használom a C++ template funkcióját.
 - Maga az osztály templatelt az együtthatók típusára ( `coeff_type` )
@@ -530,11 +607,13 @@ ugyanazt a `Polynomial` példányt különböző típusú paraméterekkel ki leh
 
 Egy kifejezetten érdekes és hasznos következménye a template-es működésnek az,
 hogy két polinomot képesek vagyunk komponálni úgy, hogy az egyiket kiértékeljük a másikban.
-== Variable
-
-== PowerPermutation
 
 == Rational
+
+== Tesztek
+
+= Grid
+
 = Megjelenítés
 
 #chapter[Eredmények]
