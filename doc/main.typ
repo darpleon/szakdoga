@@ -488,7 +488,53 @@ $
 = Visszatranszformálás
 
 #chapter[Implementációs részletek]
+= overview
+C++
+= Lineáris algebra
 = Polinom osztály
+A polinomok szimbolikus reprezentációjához és manipulációjához létrehoztam a `Polynomial` osztályt.
+== Template
+Az osztályban használom a C++ template funkcióját.
+- Maga az osztály templatelt az együtthatók típusára ( `coeff_type` )
+- A polinomot kiértékelő `evaluate` függvény templatelt a bemeneti paraméter típusára ( `input_type` )
+
+Az `evaluate` függvény visszatérési értékét az alábbi template kifejezés írja le
+```cpp
+  using result_type = sum_type<product_type<
+                                   product_type<input_type>,
+                                   coeff_type>>;
+```
+A `sum_type` és `product_type` templatek két típus (vagy egy típus önmagával vett)
+összegét, illetve szorzatát ( `operator+` / `operator*` ) fejezik ki, és kódban így néznek ki
+```cpp
+template <typename T, typename U = T>
+using sum_type = decltype(std::declval<T>() + std::declval<U>());
+
+template <typename T, typename U = T>
+using product_type = decltype(std::declval<T>() * std::declval<U>());
+```
+Létrehoztam továbbá egy templatelt structot (neve `I`, az "Identity" szót rövidítve)
+aminek két statikus tagja, `zero` és `one` tárolják azokat az értékeket,
+amik az adott típus nullája, illetve egységeként értendőek.
+Ezt a structot specializálni kell a használt típusokra ahhoz,
+hogy bizonyos függvényeket (pl. `evaluate` ) használni lehessen.
+
+A templatek használata lehetővé teszi a felhasználást különböző típusokkal
+(pl float, double, complex, vektor).
+Nagyban növeli a rugalmasságot, hogy az együtthatók és a bemeneti paraméter külön vannak templatelve.
+Így például lehet polinomunk ami double típusú paramétert kap,
+de az együtthatói (így végül a `result_type`-ja is) vektor típusúak.
+
+És mivel az `input_type`-ot csak az `evaluate` meghívásakor kell meghatározni,
+ugyanazt a `Polynomial` példányt különböző típusú paraméterekkel ki lehet értékelni.
+
+Egy kifejezetten érdekes és hasznos következménye a template-es működésnek az,
+hogy két polinomot képesek vagyunk komponálni úgy, hogy az egyiket kiértékeljük a másikban.
+== Variable
+
+== PowerPermutation
+
+== Rational
 = Megjelenítés
 
 #chapter[Eredmények]
