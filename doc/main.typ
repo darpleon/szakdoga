@@ -102,7 +102,38 @@ ott gyakran megteszik (clamping).
 
 
 = Parametrikus sebesség
+Egy $vc(r)(t)$ görbe parametrikus sebessége alatt a görbe deriváltjának nagyságát értjük.
+Ezt a koordinátánként vett deriváltakból a pitagoraszi távolságképlettel tudjuk kiszámolni,
+ami egy síkgörbe esetén így néz ki:
+$
+  sigma(t) = |vc(r)'(t)| = sqrt(x'(t)^2 + y'(t)^2)
+$
 
+A parametrikus sebesség ismerete fontos lehet CAD/CAM környezetben,
+márcsak azért is, mert segítségével további hasznos dolgokat ki tudunk számolni.
+A korábbi definícióból következik, hogy a parametrikus sebesség integrálásával megkapjuk a görbe hosszát.
+Az előjeles görbületet ki tudjuk számolni az alábbi képlettel
+$
+  k = (x'y'' - y'x'') / sigma^3
+$
+
+Számunkra a legfontosabb az adott távolságra lévő "párhuzamos görbe" (más szóval offset) képlete lesz
+$
+  vc(r)_d = vc(r) + d vc(n)
+$
+ahol $vc(n)$ az $vc(r)$ görbére állított egységhosszúságú normálvektor.
+Normálvektort egyszerűen kapunk úgy, hogy merőlegest állítunk a deriváltra.
+De ahhoz, hogy ez egységhosszúságú legyen, le kell osztanunk a derivált nagyságával,
+tehát a parametrikus sebességgel. Így a képlet
+$
+  vc(r)_d = vc(r) + d vc(r)'_perp / sigma
+$
+
+Sajnos a parametrikus sebességgel van egy jelentős probléma a gyakorlati felhasználás terén:
+a négyzetgyök miatt egy polinomiális/racionális görbe parametrikus sebessége általános esetben nem polinomiális/racionális.
+Ez nem csak azért okoz gondot, mert költségesebbé teszi a kiértékelést, hanem azért is,
+mert így nem tudjuk az offsetet kifejezni a szokásos kontrollpont alapú módszerekkel.
+Így CAD/CAM rendszerekben gyakran pontatlan közelítéseket kell alkalmazni.
 
 #chapter[PH Görbék]
 = PH síkgörbék
