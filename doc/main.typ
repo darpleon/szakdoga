@@ -163,10 +163,59 @@ Ez nem csak azért okoz gondot, mert költségesebbé teszi a kiértékelést, h
 mert így nem tudjuk az offsetet kifejezni a szokásos kontrollpont alapú módszerekkel.
 Így CAD/CAM rendszerekben gyakran pontatlan közelítéseket kell alkalmazni.
 
-#chapter[PH Görbék]
+#chapter[Polinomiális PH Görbék]
+A "Pythagorean-hodograph" (PH) görbék olyan speciális polinomiális/racionális görbék,
+melyeknek a parametrikus sebessége is polinomiális/racionális.
+A névben a "hodográf" kifejezés valamilyen mozgás sebességének (tehát deriváltjának) a grafikonját jelenti.
+Ilyen ábrákat használnak például szélsebességek elemzésére.
+A "pitagoraszi" alatt pedig a Pitagorasz tételt értjük egy derékszögű háromszög oldalai közti összefüggésre.
+Összesítve, PH görbe alatt olyan parametrikus görbéket értünk, ahol az alábbi kifejezésben
+$
+  x'(t)^2 + y'(t)^2 = sigma(t)^2
+$
+minden tag, tehát a parametrikus sebesség is, egy polinom, vagy racionális függvény
+(még a négyzetre emelés előtt is).
 = PH síkgörbék
-== Alapok
+Ugyanúgy, ahogy léteznek $a$, $b$, $c$ pitagoraszi (egész) számhármasok,
+melyekre teljesül, hogy $a^2 + b^2 = c^2$,
+léteznek $a(t)$, $b(t)$, $c(t)$ pitagoraszi #emph[polinom]hármasok is.
+Ilyen polinomhármasokat tudunk generálni is,
+méghozzá ugyanazzal a képlettel, amivel a számhármasokat.
+
+Legyen $m(t)$ és $n(t)$ két polinom.
+Ekkor a polinomhármasunk
+$
+  a(t) &= m^2(t) - n^2(t) \
+  b(t) &= 2 m(t) n(t) \
+  c(t) &= m^2(t) + n^2(t)
+$
+
+A mi parametrikus görbénkben
+$
+  x'(t) = a(t) wide wide y'(t) = b(t) wide wide sigma(t) = c(t)
+$
+A görbét magát megkaphatjuk a deriváltak integrálásával (és kiindulópont választásával).
+
 == Reprezentáció komplex számokkal
+A PH görbék generálásának fent leírt módját elegánsabban ki tudjuk fejezni, ha komplex számokat használunk.
+Legyen
+$
+  vc(w)(t) = m(t) + i n(t)
+$
+Ekkor
+$
+  vc(w)^2(t) &= m(t)^2 - n(t)^2 + 2 i m(t) n(t) \
+  &= x'(t) + i y'(t)
+$
+Továbbá
+$
+  |vc(w)(t)|^2 &= vc(w)(t) vc(w)^*(t) = m^2(t) + n^2(t) \ &= sigma(t)
+$
+Végül
+$
+  vc(r)(t) = x(t) + i y(t)
+$
+
 == Interpoláció
 
 = PH térgörbék
