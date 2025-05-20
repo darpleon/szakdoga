@@ -540,6 +540,7 @@ Erre a fontosabb példák
 
 Egy példa polinom-konstrukció
 ```cpp
+  Variable x, y;
   Polynomial<double> p = (x^3) - 2.0 * x * (y^2) + 1.0
 ```
 
@@ -608,11 +609,41 @@ ugyanazt a `Polynomial` példányt különböző típusú paraméterekkel ki leh
 Egy kifejezetten érdekes és hasznos következménye a template-es működésnek az,
 hogy két polinomot képesek vagyunk komponálni úgy, hogy az egyiket kiértékeljük a másikban.
 
-== Rational
+== Racionális függvények
+A `Polynomial` mintájára létrehoztam a `Rational` osztályt a racionális függvények reprezentálására.
+Az osztály 2 `Polynomial`-ból áll, számláló és nevező.
+A `Polynomial`-hoz hasonlóan definiáltak rajta az aritmetikai műveletek (osztással bővítve),
+a kiértékelés, és a deriválás.
 
 == Tesztek
+A `Variable`, `PowerPermutation`, `Polynomial` és `Rational` osztályok működésének ellenőrzéséhez írtam unit-teszteket,
+a GoogleTest könyvtárral.
 
-= Grid
+= grid
+A feldolgozandó adatok és kiszámolt köztes értékek kezelésére létrehoztam a templatelt `grid` osztályt,
+ami egy $n times m$-es kétdimenziós tömböt reprezentál.
+A `grid`-et a C++23-ban megjelent többdimenziós subscript operátorral ( `operator[]` ) kényelmesen meg lehet indexelni.
+
+A `grid` egy $n times m$ nagyságú `std::vector`-t használ a háttérben,
+iterátora az `std::vector` iterátora.
+
+= range2d
+Az egymásba ágyazott ciklusok elkerülése végett létrehoztam a `range2d` osztályt,
+illetve ennek iterátorát, az `index2d`-t.
+Az előbbi egy $n$ és $m$ számpár ( `size_t` ),
+az utóbbi egy $i$, $j$ pár, illetve egy harmadik $m$ szám.
+
+Az `index2d` inkrementálás operátora ( `operator++` ) úgy növeli $i$-t és $j$-t,
+hogy végiglépegessen egy $m$ hosszú sorokból álló kétdimenziós tömb indexein.
+A dereferálás operátora ( `operator*` ) pedig visszaadja $i$-t és $j$-t.
+
+Így az alábbi szintaxissal végig lehet iterálni egy $n times m$-es tömb indexein
+
+```cpp
+  for (auto [i, j] : range2d{n, m}) {
+    ...
+  }
+```
 
 = Megjelenítés
 
