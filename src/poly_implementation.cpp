@@ -93,8 +93,6 @@ std::array<std::array<Rational<double>, 3>, 2> from_isotropic_coons(std::array<P
         n[i] = m[i] / q;
     }
 
-    std::cout << numer[0].terms().size() << "\n";
-
     std::array<Rational<double>, 3> x;
     for (size_t i = 0; i < 3; ++i) {
         x[i] = numer[i] / denom;
@@ -117,9 +115,13 @@ int main()
                          V<3>{4./5., 0., -3./5.}, V<3>{2./3., 2./3., -1./3.}, V<3>{4./9., 8./9., 1./9.},
                          V<3>{1., 0., 0.},        V<3>{8./9., 4./9., 1./9.},  V<3>{2./3., 2./3., 1./3.} }};
 
-    V<3> center = p[1, 1];
+    to_obj("out/data.obj", p, n);
+
+    double scale = 5.;
+
+    V<3> center =  p[1, 1];
     for (auto [i, j] : range(p)) {
-        p[i, j] = 1.2 * (p[i, j] - center);
+        p[i, j] = scale * (p[i, j] - center);
     }
 
     grid<M<6, 2>> interp_data = ni::calculate_interp(p, n);
@@ -147,7 +149,7 @@ int main()
             double v_val = ni::ddivide(j, res);
             for(size_t k = 0; k < 3; ++k) {
                 c_val[i, j][k] = c[k].evaluate<double>({{u, u_val}, {v, v_val}});
-                x_val[i, j][k] = x[k].evaluate<double>({{u, u_val}, {v, v_val}});
+                x_val[i, j][k] = center[k] + x[k].evaluate<double>({{u, u_val}, {v, v_val}}) / scale;
                 n_val[i, j][k] = n[k].evaluate<double>({{u, u_val}, {v, v_val}});
             }
         }
@@ -156,9 +158,10 @@ int main()
         isotropic_patches.push_back(std::move(c_val));
     }
 
-    to_obj("out/data.obj", p, n);
     to_obj("out/x_iso_poly.obj", isotropic_patches);
-    to_obj("out/x_poly.obj", patches);
+    to_obj("out/x_poly_derived.obj", patches);
+    to_obj("out/x00.obj", patches[0][0], patches[0][1]);
+    to_obj("out/x10.obj", patches[2][0], patches[2][1]);
 
 
     return 0;

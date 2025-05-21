@@ -468,7 +468,7 @@ $
 $
 
 Mivel nem szorzunk össze azonos változótól függő függvényeket,
-a deriváltak is hasonlóan néznek ki
+a deriváltak is hasonlóan egyszerűek
 $
   dd(vc(y), u) = mat(F'_0(u), G'_0(u), F'_1(u), G'_1(u))
   mat(vc(a)_00, vc(delta)_00, vc(a)_01, vc(delta)_01;
@@ -485,7 +485,149 @@ $
   vec(F'_0(v), G'_0(v), F'_1(v), G'_1(v))
 $
 
-= Visszatranszformálás
+= Visszatranszformálás, az eredmény fokszáma
+Az $vc(y)$ izotróp térből primális térbe transzformálásához szükséges műveleteket
+a fejezet korábbi pontjaiban már ismertettük.
+// TODO: hivatkozás?
+Viszont gyakorlati megfontolások miatt érdemes ezeket tovább alakítani,
+hogy a módszert végrehajtó programunk hatékonyabban tudjon futni.
+
+A legfontosabb szempont a transzformálás során előforduló polinomok fokszámainak minimalizálása.
+Egy kétváltozós polinom tagjainak száma négyzetesen arányos a fokszámmal,
+a kiértékelés komplexitása köbösen (tagonként $O(n)$),
+a polinomok közti szorzásé pedig már negyedik hatvánnyal (minden tagot minden taggal).
+
+A racionális függvényeket reprezentáló kód jelenlegi formájában nem tudja a közös osztókat tartalmazó
+számlálót és nevezőt egyszerűsíteni, így azok felhalmozódnak a számolás során.
+Ez egyrészt egy szükségtelenül magas fokszámú reprezentációt ad a felületről,
+amit több ideig tart kiértékelni.
+Erre megoldás lehetne egy kódbeli implementáció a racionális függvények egyszerűsítésére.
+Másrészt pedig magát a transzformációt is jelentősen lelassítja,
+ha felesleges műveleteket kell elvégezni.
+Ez még akkor is így lenne, ha minden lépés után elvégeznénk egy egyszerűsítést,
+hisz az egyszerűsítésnek is van költsége.
+
+A megvalósítás egy korábbi iterációjában a létrejött felület 56-od fokú lett,
+és a programnak több órán át tartott kiszámolni
+(érdekes módon a kiértékelés ehhez képest elenyészően kevés ideig tartott).
+Szerencsére a felület "valódi" fokszáma ennél általános esetben is sokkal alacsonyabb.
+
+Ez azt jelenti, hogy ha visszatranszformálást először "kézzel" átalakítjuk,
+észreveszünk és kihasználunk néhány azonosságot,
+akkor sokkal hatékonyabb kódot tudunk írni.
+
+// Vegyük tehát $vc(x)$ 4.2-es pontban leírt képletét
+// $
+// vc(x) = h vc(n) + dd(vc(n), vc(s)) (dd(vc(n), vc(s))^T dd(vc(n), vc(s)))^(-1) dd(h, vc(s))^T \
+// $
+Vegyük $vc(y)$ transzformációját a Blaschke-hengerre
+#centered_split(distance: 50%,
+  $
+    vc(n) = 1 / (1 + y_x^2 + y_y^2) vec(2 y_x, 2 y_y, -1 + y_x^2 + y_y^2)
+  $,
+  $
+    h = (2 y_z) / (1 + y_x^2 + y_y^2)
+  $
+)
+Adjunk külön nevet a számlálóknak és nevezőknek
+#centered_split(distance: 50%,
+  $
+    vc(n) = vc(m) / q
+  $,
+  $
+    h = k / q
+  $
+)
+Ezzel $vc(x)$ első komponensét le is tudhatjuk
+$
+  vc(x) = h vc(n) + nabla = (k vc(m)) / q^2 + nabla
+$
+// A deriváltakat szorzatként fejezzük ki:
+// #centered_split(distance: 30%,
+//   $
+//   dd(vc(n), vc(s)) = dd(vc(n), vc(y)) dd(vc(y), vc(s)) \
+//   $,
+//   $
+//   dd(h, vc(s)) = dd(h, vc(y)) dd(vc(y), vc(s)) \
+//   $,
+// )
+A deriváltak
+#centered_split(distance: 30%,
+  $
+    dd(vc(n), vc(y)) = 2 / q^2 M\
+  $,
+  $
+    dd(h, vc(y)) = 2 / q^2 vr(k)\
+  $
+)
+Ahol
+$
+  M = mat(1 - y_x^2 + y_y^2,         -2y_x y_y;
+                  -2 y_x y_y, 1 + y_x^2 - y_y^2;
+                       2y_x,              2y_y;) \
+  vr(k) = mat(-2 y_x y_z, -2y_y y_z, 1)
+$
+Az $y_z$ szerinti derivált oszlopát levágtuk $M$-ről, hisz az mind $0$.
+
+A második komponens
+$
+nabla = dd(vc(n), vc(s)) (dd(vc(n), vc(s))^T dd(vc(n), vc(s)))^(-1) dd(h, vc(s))^T \
+$
+Tudjuk, hogy
+#centered_split(distance: 40%,
+  $
+  dd(vc(n), vc(s)) = dd(vc(n), vc(y)) dd(vc(y), vc(s)) = 2 / q^2 M dd(vc(y), vc(s)) \
+  $,
+  $
+  dd(h, vc(s)) = dd(h, vc(y)) dd(vc(y), vc(s)) = 2 / q^2 vr(k) dd(vc(y), vc(s)) \
+  $,
+)
+Így
+$
+nabla = 4 / q^4 M dd(vc(y), vc(s))
+  (4 / q^4 dd(vc(y), vc(s))^T M^T M dd(vc(y), vc(s)))^(-1) dd(vc(y), vc(s))^T vr(k)^T
+$
+Vegyük észre, hogy a $4 / q^4$ tagok kiejtik egymást.
+
+$M$ két oszlopa (az $u$ illetve $v$ szerinti deriválthoz tartozó részek) mindig merőleges egymásra.
+Belátható, hogy
+$
+M^T M = q^2 mat(1, 0; 0, 1)
+$
+#let Yxy = $Y_(x y)$
+Bontsuk szét $dd(vc(y), vc(s))$-t
+$
+dd(vc(y), vc(s)) = vec(Yxy, vr(y)_z)
+$
+És rendezzünk tovább
+$
+nabla =1 / q^2 M Yxy (Yxy^T Yxy)^(-1) vec(Yxy, vr(y)_z)^T vr(k)^T
+$
+$
+nabla = 1 / q^2 M (Yxy^(-1))^T vec(Yxy, vr(y)_z)^T vr(k)^T
+$
+$
+nabla = 1 / q^2 M (vr(k) vec(Yxy, vr(y)_z) Yxy^(-1))^T
+$
+Bontsuk szét $vr(k)$-t is
+$
+vr(k) = mat(vr(k)_(x y), 1)
+$
+$
+nabla = 1 / q^2 M (vr(k)_(x y) + vr(y)_z Yxy^(-1))^T
+$
+$Y_(x y)$ inverzének is vegyük külön a számlálóját és nevezőjét
+$
+Yxy^(-1) = 1 / abs(Yxy) Y'_(x y)
+$
+$
+nabla = 1 / (q^2 abs(Yxy)) M (abs(Yxy) vr(k)_(x y) + vr(y)_z Y'_(x y))^T
+$
+
+Ezzel az egyszerűsítéssel csak 17-edfokú az eredmény,
+a számítás pár másodperc alatt lefut.
+Valójában még ez az alak sem optimális még,
+egy CAS rendszer a kapott függvényt le tudja egyszerűsíteni 11-edfokúra.
 
 #chapter[Implementációs részletek]
 = overview
@@ -646,5 +788,106 @@ A dereferálás operátora ( `operator*` ) pedig visszaadja $i$-t és $j$-t.
 ```
 
 = Megjelenítés
+A program a létrejött racionális patcheket kiértékeli $n times n$ darab ($u$, $v$) értékpárban,
+a pontokat egy `grid`-ben tárolja.
+Ezután a felületeteket exportálja a népszerű _obj_ fájlformátumban.
+A kiírás történhet normálvektorokkal együtt, vagy nélkülük.
+Lehetséges továbbá több patchet egyszerre, ugyanabba a fájlba írni.
+Ez esetben a program a patcheket külön group-okba rakja a fájlon belül.
+Az obj fájlok megjelenítésére sok alkalmazás képes, én a ParaView-t használtam.
 
 #chapter[Eredmények]
+
+= Szabad paraméterek
+Már korábban is említettük, hogy a módszer elvi alapjai nem határoznak meg egy egyedi felületet bizonyos adatpontokra.
+A folyamat során hozhatunk pár szabad döntést, amik befolyásolják az eredményt.
+Ezek az eredmények mind megfelelnek bizonyos alapvető elvárásoknak
+(a felület folytonos, interpolál a megadott pontok és normálvektorok között)
+de adott esetben komolyabb esztétikai hibák és nem kívánt anomáliák jelenhetnek meg.
+
+A legfőbb ezek közül az amikor élek jelennek meg a felületen,
+az egy vonal mentén hirtelen megfordulnak.
+Ilyen lehet egyrészt a patchek találkozásánál
+(maguk a patchek külön-külön simák, de a határokon ellentétes irántba tartanak)
+de akár a patcheken belül is.
+
+#todo_image("élek")
+
+#todo_image("izotróp térben élek nélkül")
+
+= Végponti deriváltak
+
+A legkézenfekvőbb szabad paraméter az izotróp térben megszabott végponti deriváltak nagysága.
+Minél nagyobb a szorzó, a felület annál kaotikusabban viselkedik.
+Extrém mértékben kitér, sokszor önmagára hajlik.
+Ezzel szemben a kicsi szorzó hatására a felület "merev" lesz.
+Az adatpontok környékén lapos, a pont-normálvektor pár által meghatározott síkot közelíti.
+A lapok találkozásánál pedig szintén élek alakulnak ki.
+
+#todo_image("magas szorzó")
+
+#todo_image("alacsony szorzó")
+
+Nem muszáj ragaszkodnunk az interpolálandó deriváltak irányát meghatározó heurisztikához sem.
+A vektorok egy adott síkon belül (melynek normálvektora a folyamat során kiszámolt $vc(v)$)
+bármerre mutathatnak.
+És bár a heurisztikánk az izotróp térben nagyon szép, "egyenes" határgörbékhez vezet,
+ez a tulajdonság nem feltétlenül marad meg visszatranszformálás után.
+Előfordulhat, hogy egy patch túlságosan be-, vagy kilóg a sarokpontok közti "keretből".
+Az itt használt módszernek egy összetettebb alternatívája lehetne például az,
+hogy a derivált-heurisztikát még a primális térben alkalmazzuk,
+a deriváltakat transzformáljuk az izotróp térbe, majd ezeket vetítjük le a megfelelő síkra.
+
+= Adatpontok előzetes transzformálása
+A módszer egy nem kifejezetten szerencsés tulajdonsága az,
+hogy nem lineáris (illetve pontosabban affin).
+Ez alatt az értendő, hogy amennyiben az adatpontokat eltoljuk, forgatjuk, vagy skálázzuk,
+a létrejövő felület nem az eredeti hasonlóan transzformált verziója lesz,
+attól drasztikus mértékben eltérhet.
+
+Ez egy újabb dimenziót ad a felület igazításához.
+Adatpontjainkat áttranszformálhatjuk a módszer végrehajtása előtt,
+majd az eredményt visszatranszformálhatjuk, hogy egy új interpolációt kapjunk.
+Ezzel a lehetőséggel bizonyos esetben szükséges is élnünk,
+hogy felületünk megfeleljen az esztétikai elvárásainknak.
+
+== Eltolás
+Ha az adatpontjaink túl távol vannak az origótól,
+a patchek között élek alakulnak ki.
+Ezek az élek látványosan eltérnek a patchen belüli élektől,
+amiket például a nagy izotróp végponti deriváltak okoznak.
+Itt a patchek tesznek egy kanyart a határgörbe közelében, és "fordítva" érnek be.
+
+Érdemes ezért az adatpontokat úgy eltolni, hogy az origó a közepükön legyen.
+
+#todo_image("távoli")
+
+== Skálázás
+Még egy egyszerű transzformáció az arányos skálázás,
+ergo az összes adatpontot beszorozzuk ugyanazzal a számmal
+(a normálvektorokat békén hagyjuk, azok mindenképp egység hosszúságúak).
+Egy magasabb szorzó "kifeszíti" a felületet.
+Az éleket ki tudja simítani,
+de cserébe a felület szélei "behorpadnak",
+a határgörbék egyre inkább kitérnek az origó irányába.
+
+A lefele skálázás szépen kiegyenesíti a határgörbéket,
+azonban a patchek határai környékén éleket alakíthat ki.
+
+#todo_image("élek")
+
+#todo_image("kifeszítve")
+
+#todo_image("kicsi skála")
+
+== Forgatás
+
+== Irányvektorok állítása előzetes transzformálás helyett
+
+== Példa
+
+#chapter[Végszó]
+
+== Módszer megítélése
+
+== További kutatás

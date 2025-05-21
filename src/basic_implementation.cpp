@@ -170,7 +170,7 @@ V<3> calculate_delta_star(const grid<V<3>>& a, size_t i, size_t j)
     }
 }
 
-constexpr double deriv_magnitude = 0.5;
+constexpr double deriv_magnitude = 0.8;
 
 grid<M<6, 2>> calculate_interp(const grid<V<3>>& p, const grid<V<3>>& n)
 {

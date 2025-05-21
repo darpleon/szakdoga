@@ -1,5 +1,5 @@
 #let todo = text.with(red)
-#let todo_image(content, width: 5cm, height: 5cm) = {
+#let todo_image(content, width: 7.5cm, height: 7.5cm) = {
   align(center)[
     #rect(width: width, height: height, stroke: red)[
       #v(1fr)
