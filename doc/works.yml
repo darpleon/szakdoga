@@ -1,3 +1,15 @@
+first:
+    type: Article
+    title: Pythagorean hodographs
+    author: ["Rida T. Farouki", "Takis Sakkalis"]
+    page-range: 736-752
+    date: 1990
+    parent:
+        type: Periodical
+        title: IBM Journal of Research and Development
+        volume: 34
+        issue: 5
+
 pottman:
     type: Article
     title: Rational curves and surfaces with rational offsets

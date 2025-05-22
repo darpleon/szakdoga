@@ -12,11 +12,35 @@
 //#chapter(numbering: none)[Kivonat]
 
 #chapter[Bevezetés]
-= CAD/CAM
-#todo("bevezetés")
+A számítógépek elterjedésével megjelent az iparban a
+"Computer-Aided Design" (CAD) és "Computer-Aided Machining" (CAM) fogalma.
+Ezek grafikus szoftverfelületek, melyek lehetővé teszik ipari alkatrészek,
+fogyasztói termékek, vagy akár épületek digitális tervezését,
+illetve digitálisan irányított gyártását (Computer Numerical Control - CNC).
+Ennek szolgálatára alakultak ki és fejlődnek tovább az alkalmazott matematika bizonyos ágai,
+mint például a numerikus analízis.
 
-// = Parametrikus görbék, felületek
-// Compu
+A CAD/CAM rendszerek alapvető eszköze a polinomiális/racionális interpoláció,
+illetve az erre épülő parametrikus görbék/felületek.
+A dolgozat célja, hogy rávilágítson ezeknek egy speciális alosztályára:
+az úgynevezett "pitagoraszi-hodográf" (PH) görbékre, és "pitagoraszi-normál" (PN) felületekre.
+A PH görbék/PN felületek különleges tulajdonságaikból adódóan
+egyszerűsítik az "offsetek" (párhuzamos görbék/felületek) előállítását.
+
+A PH görbék kutatásának úttörője Rida T. Farouki,
+aki 1990-ben vezette be a fogalmat @first,
+és azóta is aktívan tevékenykedik a területen.
+A téma 1995-ben Helmut Pottman cikkével @pottman kibővült a PN felületekkel,
+a PH görbék felületi megfelelőjével.
+
+A dolgozat első pár fejezetébem bemutatom a PH/PN mögötti motivációkat,
+ismertetem a pitagoraszi görbék/felületek elméletének alapjait.
+Ezután kitérek a PN felületek interpolációjának egy konkrét módszerére,
+melyet Lávička et al. fogalmazott meg 2016-ban @smooth.
+Kifejtem az egyes lépések mögötti matematikát.
+Beszámolok a módszer szoftveres implementációjáról, illetve az elért eredményekről.
+
+#pagebreak()
 
 = Polinomok, racionális függvények
 Amikor geometriai alakzatokat szeretnénk szoftveresen reprezentálni,
@@ -26,11 +50,11 @@ ennek az időigénye és pontossága pedig drasztikus mértékben függ a kifeje
 
 Az összeadást, kivonást és szorzást nagyon egyszerű algoritmusokkal,
 akár 1 CPU-ciklus alatt végre tudjuk hajtani,
-// TODO: adatszerkezet?
 az eredmény pontossága csak a számok mögötti adatszerkezet (általában floating-point) limitációitól függ.
 
 Azokat a függvényeket, amik kifejezhetők véges sok összeadással, kivonással és szorzással,
 polinomoknak hívjuk. Egy egyváltozós polinom kanonikus alakja 
+(az úgynevezett "monomiális bázis"-ban)
 $
   P(x) = sum_(k = 0)^n a_k x^k
 $
@@ -47,36 +71,31 @@ Ez kedvező, mert így egy racionális függvény kiértékelésekor elég csak 
 Sok nevezetes függvényt (például $sqrt(x)$, $sin(x)$, $ln(x)$)
 nem lehet kifejezni véges sok alapművelettel,
 értéküket csak megközelíteni tudjuk.
-Ezt vagy egy közelítő polinommal/racionálissal tesszük (pl Taylor-sor, Padé közelítő),
-vagy ismételt, inkrementálisan közelítő lépéseket hajtunk végre (pl Newton-módszer).
+Ezt vagy egy közelítő polinommal/racionálissal tesszük (pl. Taylor-sor, Padé közelítő),
+vagy ismételt, inkrementálisan közelítő lépéseket hajtunk végre (pl. Newton-módszer).
 
 Ebből következik, hogy az ilyen függvények kiértékelése lassabb, pontatlanabb, vagy mindkettő,
 mint egy alacsony fokú polinom vagy racionális függvény.
 Így lehetőség szerint el akarjuk őket kerülni egy CAD környezetben.
 
 = Kontrollpont-alapú reprezentáció
-#todo("megírni rendesen")
-
 Ha egy görbét/felületet meghatározó polinomot a szokásos hatványösszeg alakban írunk le,
 az együtthatók nem nyújtanak intuitív betekintést a görbe/felület geometriai tulajdonságaiba.
-A CAD-ben elterjedtek olyan alternatív reprezentációk,
-melyek.
-
-// TODO::
-// A kontrollpontok tekinthetők együtthatóknak egy másik bázisban,
-// de léteznek
+Léteznek azonban olyan alternatív polinomiális bázisok, melyekben az együtthatók térbeli pozíciója
+(értsd: a koordinátánként vett együtthatókat vektorként értelmezzük; ez a "kontrollpont")
+valamilyen módon tükrözi a görbe elhelyezkedését és alakját.
 
 
 == Bézier görbék
 Egy $n$-ed fokú Bézier görbét $n + 1$ kontrollponttal reprezentálunk.
 Kiértékelni a De Casteljau algoritmussal tudjuk,
 ami rekurzív lineáris interpolációra épül.
-A Béziér kontrollpontok a görbe mögötti polinom együtthatói a Bernstein-bázisban,
+A Bézier kontrollpontok a görbe mögötti polinom együtthatói a Bernstein-bázisban,
 melynek $k$-adik eleme
 $
   b_(k, n)(t) = binom(n, k) t^k (1 - t)^(n - k)
 $
-A Béziér görbe $t = 0$-ban áthalad az első kontrollponton,
+A Bézier görbe $t = 0$-ban áthalad az első kontrollponton,
 $t = 1$-ben az utolsón, a többit pedig közelíti.
 Az első illetve utolsó kettő kontrollpontot összekötő egyenes
 érinti a görbét az első illetve utolsó kontrollpontban.
@@ -84,17 +103,16 @@ Kifejezetten népszerű a harmadfokú Bézier görbe a graphic design területé
 hiszen egyszerűen lehet állítani a görbe irányait a végpontokban.
 #figure(
   image("images/bezier.png", width: 70%),
-  caption: [egy harmadfokú Bézier görbe kontrollpontjaival (forrás: Wikipédia)],
-  numbering: none
+  caption: [egy harmadfokú Bézier görbe kontrollpontjaival (forrás: Wikipédia)]
 )
 
 == B-Spline
 A B-Spline (Basis-Spline) darabonként definiált bázisfüggvényekből áll,
-melyeknek szegmenseit úgynevezett "csomópontok" (knots) választják el ($t_0, t_1 dots t_m$).
-A bázisfüggvényeket A Cox-de Boor képlettel tudjuk kiértékelni:
+melyeknek szegmenseit úgynevezett "csomópontok" (knots) választják el ($t_0, t_1, dots, t_m$).
+A bázisfüggvényeket a Cox-de Boor képlettel tudjuk kiértékelni:
 $
-  B_(i, 0)(t) := cases(1 wide "ha" t_i <= t < t_(i + 1), 0 wide "egyébként") \
-  B_(i, n)(t) := (t - t_i) / (t_(i + n) - t_i) + (t_(i + n + 1) - t) / (t_(i + n + 1) - t_(i + 1))
+  N_(i, 0)(t) := cases(1 wide "ha" t_i <= t < t_(i + 1), 0 wide "egyébként") \
+  N_(i, n)(t) := (t - t_i) / (t_(i + n) - t_i) + (t_(i + n + 1) - t) / (t_(i + n + 1) - t_(i + 1))
 $
 
 Ebből következik, hogy egy kontrollpont csak a környező $n + 1$ szegmensre hat ki,
@@ -109,8 +127,7 @@ Mivel ez nem okoz gondot az első és utolsó kontrollpontban,
 ott gyakran megteszik (clamping).
 #figure(
   image("images/bsbasis.png", width: 70%),
-  caption: [negyedfokú B-Spline bázis (forrás: MIT)],
-  numbering: none
+  caption: [negyedfokú B-Spline bázis (forrás: MIT)]
 )
 
 
@@ -136,9 +153,9 @@ Elképzelhetjük, hogy a spline egy egyel nagyobb dimenziós térben él,
 ahol az utolsó koordináta a súly (homogén koordináták).
 Így az osztás nem más, mint vetítés az eredeti térbe.
 
-A racionális függvényekre való kiterjeszkedés lehetővé teszi a körívek/gömbfelületek pontos leírását.
+A racionális függvényekre való kiterjeszkedés lehetővé teszi a körívek/gömbfelületek pontos leírását is.
 
-#todo_image("NURBS kép")
+Széleskörű funkcionalitása miatt a NURBS spline-ok használata industry standard a CAD/CAM területén.
 
 = Parametrikus sebesség
 Egy $vc(r)(t)$ görbe parametrikus sebessége alatt a görbe deriváltjának nagyságát értjük.
@@ -173,6 +190,9 @@ a négyzetgyök miatt egy polinomiális/racionális görbe parametrikus sebessé
 Ez nem csak azért okoz gondot, mert költségesebbé teszi a kiértékelést, hanem azért is,
 mert így nem tudjuk az offsetet kifejezni a szokásos kontrollpont alapú módszerekkel.
 Így CAD/CAM rendszerekben gyakran pontatlan közelítéseket kell alkalmazni.
+
+A következő fejezetben megismerkedünk a PH görbékkel,
+amik megoldást nyújtanak erre a problémára.
 
 #chapter[Polinomiális PH Görbék]
 A "Pythagorean-hodograph" (PH) görbék olyan speciális polinomiális/racionális görbék,
@@ -240,15 +260,14 @@ hisz az $vc(r)'(t)$ integrálásakor választott konstans is egy szabadsági fok
 Az önálló laboratóriumom során implementáltam az interpolálást Farouki könyve @pythag alapján,
 bernstein alakban.
 A programhoz készült egy interaktív vizuális interface,
-ami mozgatható Bézier kontrollpontok alapján rajzolt le egy PH síkgörbét,
+ami mozgatható Bézier kontrollpontok alapján rajzol le egy PH síkgörbét,
 az ahhoz tartozó valódi kontrollpoligont,
 illetve egy offset görbét.
 
 
 #figure(
   image("images/phplanar.png", width: 70%),
-  // caption: [],
-  numbering: none
+  caption: []
 )
 
 = PH térgörbék
@@ -259,7 +278,7 @@ $
 
 Pitagoraszi polinomnégyeseket 4 tetszőleges polinommal lehet generálni
 $
-  x'(t) &= m^2(t) + n^(t) - p^2(t) - q^2(t) \
+  x'(t) &= m^2(t) + n^2(t) - p^2(t) - q^2(t) \
   y'(t) &= 2[m(t)q(t) + n(t)p(t)] \
   z'(t) &= 2[n(t)q(t) - m(t)p(t)] \
   sigma(t) &= m^2(t) + n^2(t) + p^2(t) + q^2(t)
@@ -276,13 +295,13 @@ $
 Térgörbe esetén a polinomiális parametrikus sebességből még nem következik a racionális offset.
 Ahhoz egy racionális "Frenet keret" kell,
 ami az egységhosszúságú irányvektoron kívül tartalmazza az egyszéghosszúságú normál és binormál vektort.
+Ez teljesül a PH térgörbék egy speciális alosztályára, a hélix (spirál) alakú PH görbékre.
 
 Önálló laboratóriumom alatt egy PH térgörbe demot is készítettem.
 
 #figure(
   image("images/phspatial.png", width: 70%),
-  // caption: [],
-  numbering: none
+  caption: []
 )
 
 #chapter[PN felületek]
@@ -337,9 +356,6 @@ Ezek közül pár fontosabb:
   melyek rendelkeznek a PN tulajdonsággal.
 
 A továbbiakban Lávička et al. módszerét (izotróp tér) fogom feldolgozni.
-Kifejtem az egyes lépések matematikai hátterét.
-Dokumentálom a módszer szoftveres implementációját,
-illetve az elért eredményeket.
 
 #chapter[PN interpoláció $C^1$ folytonossággal]
 Lávičkáék módszere egy pont-normálvektor párosokból álló négyzetrács alakú hálózatból indul ki.
@@ -349,6 +365,41 @@ illetve egymáshoz $C^1$ folytonossággal illeszkednek.
 
 A kreálandó felületet $vc(x)(u, v)$-nek hívjuk,
 illetve a tömörebb szintaxis érdekében az ($u, v$) párost egy vektorba összevonva $vc(x)(vc(s))$-nek.
+
+A folyamat tömör vázlata:
+- az adatpontokat transzformáljuk a duális térbe, majd onnan az izotróp térbe
+- az izotróp térben interpoláljuk az adatpontokat
+- a kapott felületet visszatranszformáljuk a primális térbe
+
+#import "@preview/fletcher:0.5.7" as fletcher: diagram, node, edge
+
+#align(center)[
+  #diagram(
+    node-stroke: 1pt,
+    node-corner-radius: 4pt,
+    node-outset: 5pt,
+    spacing: 7em,
+    node((0,0), [
+      Primális tér
+
+      felület: $vc(x)$
+    ]),
+    edge([adatpontok], "-|>", bend: 40deg),
+    edge([felület], "<|-", bend: -40deg),
+    node((1,0), [
+      Duális tér
+
+      felület: $vc(b) = (vc(n), h)$
+    ]),
+    edge([adatpontok], "-|>", bend: 40deg),
+    edge([felület], "<|-", bend: -40deg),
+    node((2,0), [
+      Izotróp tér
+
+      felület: $vc(y)$
+    ]),
+  )
+]
 
 = Duális reprezentáció
 Egy olyan $vc(x)(vc(s))$ racionális felületet keresünk,
@@ -367,8 +418,6 @@ $
 
 Ha feltételezzük, hogy $vc(n)$ egység hosszúságú, akkor $h$ nem más,
 mint az érintősík távolsága az origótól.
-A $h(vc(s))$ függvényt a felület support függvényének hívjuk.
-// TODO: h(s) vagy h(n)?
 
 Ezzel a képlettel már át tudjuk transzformálni az interpolálandó adatpontokat a duális térbe.
 Ahhoz, hogy a végeredményt leírhassuk a "primális" térben, szükségünk lesz az inverzre is,
@@ -426,6 +475,11 @@ $
   vc(b)(vc(y)) = 1 / (1 + y_x^2 + y_y^2) vec(2 y_x, 2 y_y, -1 + y_x^2 + y_y^2, 2 y_z)
 $
 
+#figure(
+  image("images/blaschke.png", width: 60%),
+  caption: [vetítés a Blaschke henger és izotróp tér között @smooth]
+)
+
 Az izotróp térben szabadon interpolálhatunk a transzformált adatpontok között,
 majd a felületet visszavetítjük a Blaschke hengerre.
 
@@ -463,7 +517,7 @@ Jelölje $vc(gamma)_(i, j)$ a felület $u$ szerinti deriváltját az $vc(a)_(i, 
 $vc(delta)_(i, j)$ pedig a $v$ szerinti deriváltat ugyanitt.
 
 // TODO: egy kis szóbeli magyarázat?
-Ha $vc(a)_(i, j)$ a pontháló szélén van
+Ha $vc(a)_(i, j)$-nek csak egy szomszédja van, vegyük a köztük lévő vektort
 #centered_split(
   $
     vc(gamma)^*_(0, j) =& vc(a)_(1, j) - vc(a)_(0, j) \
@@ -753,10 +807,9 @@ Valójában még ez az alak sem optimális még,
 egy CAS rendszer a kapott függvényt le tudja egyszerűsíteni 11-edfokúra.
 
 #chapter[Implementációs részletek]
-= overview
-#todo("pár mondat az eszközökről")
-
-C++, CMake, Eigen
+A módszert implementáló kódot C++-ban írtam,
+a CMake build toolt használtam fordításkor.
+A vektorokkal, mátrixokkal való számoláshoz az Eigen könyvtárat használtam.
 
 = Polinom osztály
 A polinomok szimbolikus reprezentációjához és manipulációjához létrehoztam a `Polynomial` osztályt.
@@ -864,7 +917,7 @@ Ezt a structot specializálni kell a használt típusokra ahhoz,
 hogy bizonyos függvényeket (pl. `evaluate` ) használni lehessen.
 
 A templatek használata lehetővé teszi a felhasználást különböző típusokkal
-(pl float, double, complex, vektor).
+(pl. float, double, complex, vektor).
 Nagyban növeli a rugalmasságot, hogy az együtthatók és a bemeneti paraméter külön vannak templatelve.
 Így például lehet polinomunk ami double típusú paramétert kap,
 de az együtthatói (így végül a `result_type`-ja is) vektor típusúak.
@@ -937,8 +990,7 @@ de akár a patcheken belül is.
 
 #figure(
   image("images/isotropic.png", width: 70%),
-  caption: [az izotróp térben sima a felület, de a primális térben nem feltétlenül],
-  numbering: none
+  caption: [az izotróp térben sima a felület, de a primális térben nem feltétlenül]
 )
 
 = Végponti deriváltak
@@ -952,14 +1004,12 @@ A lapok találkozásánál pedig szintén élek alakulnak ki.
 
 #figure(
   image("images/highmul.png", width: 70%),
-  caption: [nagy derivált az izotróp térben],
-  numbering: none
+  caption: [nagy derivált az izotróp térben]
 )
 
 #figure(
   image("images/lowmul.png", width: 70%),
-  caption: [kicsi derivált],
-  numbering: none
+  caption: [kicsi derivált]
 )
 
 Nem muszáj ragaszkodnunk az interpolálandó deriváltak irányát meghatározó heurisztikához sem.
@@ -996,8 +1046,7 @@ Itt a patchek tesznek egy kanyart a határgörbe közelében, és "fordítva" é
 
 #figure(
   image("images/offcenter.png", width: 70%),
-  caption: [az origó a sötétkék sarkon van],
-  numbering: none
+  caption: [az origó a sötétkék sarkon van]
 )
 
 == Skálázás
@@ -1014,14 +1063,12 @@ azonban a patchek határai környékén éleket alakíthat ki.
 
 #figure(
   image("images/highscale.png", width: 70%),
-  caption: [a nagy deriváltat nagy skálázással kompenzáljuk],
-  numbering: none
+  caption: [a nagy deriváltat nagy skálázással kompenzáljuk]
 )
 
 #figure(
   image("images/lowscale.png", width: 70%),
-  caption: [jelentősen csökkentettük a skálázást, az élek egy kicsit rosszabbak lettek],
-  numbering: none
+  caption: [jelentősen csökkentettük a skálázást, az élek egy kicsit rosszabbak lettek]
 )
 
 // == Forgatás
@@ -1029,8 +1076,7 @@ azonban a patchek határai környékén éleket alakíthat ki.
 = Végeredmény megfelelő paraméterekkel
 #figure(
   image("images/ideal.png", width: 70%),
-  // caption: [],
-  numbering: none
+  caption: []
 )
 
 #chapter[Tanulságok]
