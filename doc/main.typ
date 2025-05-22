@@ -13,10 +13,10 @@
 
 #chapter[Bevezetés]
 = CAD/CAM
-a
+#todo("bevezetés")
 
-= Parametrikus görbék, felületek
-Compu
+// = Parametrikus görbék, felületek
+// Compu
 
 = Polinomok, racionális függvények
 Amikor geometriai alakzatokat szeretnénk szoftveresen reprezentálni,
@@ -55,13 +55,16 @@ mint egy alacsony fokú polinom vagy racionális függvény.
 Így lehetőség szerint el akarjuk őket kerülni egy CAD környezetben.
 
 = Kontrollpont-alapú reprezentáció
+#todo("megírni rendesen")
+
 Ha egy görbét/felületet meghatározó polinomot a szokásos hatványösszeg alakban írunk le,
 az együtthatók nem nyújtanak intuitív betekintést a görbe/felület geometriai tulajdonságaiba.
 A CAD-ben elterjedtek olyan alternatív reprezentációk,
 melyek.
 
-A kontrollpontok tekinthetők együtthatóknak egy másik bázisban,
-de léteznek
+// TODO::
+// A kontrollpontok tekinthetők együtthatóknak egy másik bázisban,
+// de léteznek
 
 
 == Bézier görbék
@@ -79,7 +82,11 @@ Az első illetve utolsó kettő kontrollpontot összekötő egyenes
 érinti a görbét az első illetve utolsó kontrollpontban.
 Kifejezetten népszerű a harmadfokú Bézier görbe a graphic design területén,
 hiszen egyszerűen lehet állítani a görbe irányait a végpontokban.
-#todo_image("Bézier kép")
+#figure(
+  image("images/bezier.png", width: 70%),
+  caption: [egy harmadfokú Bézier görbe kontrollpontjaival (forrás: Wikipédia)],
+  numbering: none
+)
 
 == B-Spline
 A B-Spline (Basis-Spline) darabonként definiált bázisfüggvényekből áll,
@@ -100,7 +107,11 @@ Csomópontok ismétlésével elérhető, hogy a görbe átmenjen egy kontrollpon
 ez azonban a folytonosság vesztésével jár.
 Mivel ez nem okoz gondot az első és utolsó kontrollpontban,
 ott gyakran megteszik (clamping).
-#todo_image("B-Spline kép")
+#figure(
+  image("images/bsbasis.png", width: 70%),
+  caption: [negyedfokú B-Spline bázis (forrás: MIT)],
+  numbering: none
+)
 
 
 == NURBS
@@ -217,15 +228,62 @@ $
 $
 
 == Interpoláció
+Hermite adatok (végponti érték/derivált) interpolálásához az előző pont képletei alapján
+fel lehet írni egy egyenletrendszert $vc(w)(t)$ együtthatóira.
 
-#todo_image("régi kép")
+Ahhoz, hogy mindkét végpontban interpoláljuk az értéket és a deriváltat,
+4 szabadságfokra van szükségünk.
+Ezt egy másodfokú $vc(w)$-vel el tudjuk érni,
+hisz az $vc(r)'(t)$ integrálásakor választott konstans is egy szabadsági fok.
+Így $vc(r)$ végül ötödfokú lesz, 2-vel több, mint egy ugyanennyi szabadságfokkal rendelkező hagyományos görbe.
 
-#todo_image("mégegy")
+Az önálló laboratóriumom során implementáltam az interpolálást Farouki könyve @pythag alapján,
+bernstein alakban.
+A programhoz készült egy interaktív vizuális interface,
+ami mozgatható Bézier kontrollpontok alapján rajzolt le egy PH síkgörbét,
+az ahhoz tartozó valódi kontrollpoligont,
+illetve egy offset görbét.
+
+
+#figure(
+  image("images/phplanar.png", width: 70%),
+  // caption: [],
+  numbering: none
+)
 
 = PH térgörbék
-== Interpoláció
+A térgörbék pitagoraszi feltétele
+$
+  x'(t)^2 + y'(t)^2 + z'(t)^2 = sigma(t)^2
+$
 
-#todo_image("régi (kamu) kép")
+Pitagoraszi polinomnégyeseket 4 tetszőleges polinommal lehet generálni
+$
+  x'(t) &= m^2(t) + n^(t) - p^2(t) - q^2(t) \
+  y'(t) &= 2[m(t)q(t) + n(t)p(t)] \
+  z'(t) &= 2[n(t)q(t) - m(t)p(t)] \
+  sigma(t) &= m^2(t) + n^2(t) + p^2(t) + q^2(t)
+$
+
+Míg a síkbeli PH görbéket komplex számokkal lehet elegánsan reprezentálni,
+a térbelieket kvaterniókkal
+$
+  cal(A)(t) = m(t) + n(t)vc(i) + p(t)vc(j) + q(t)vc(k) \
+  vc(r)'(t) = cal(A)(t)vc(i)cal(A)^*(t)
+$
+
+== Interpoláció
+Térgörbe esetén a polinomiális parametrikus sebességből még nem következik a racionális offset.
+Ahhoz egy racionális "Frenet keret" kell,
+ami az egységhosszúságú irányvektoron kívül tartalmazza az egyszéghosszúságú normál és binormál vektort.
+
+Önálló laboratóriumom alatt egy PH térgörbe demot is készítettem.
+
+#figure(
+  image("images/phspatial.png", width: 70%),
+  // caption: [],
+  numbering: none
+)
 
 #chapter[PN felületek]
 
@@ -696,8 +754,9 @@ egy CAS rendszer a kapott függvényt le tudja egyszerűsíteni 11-edfokúra.
 
 #chapter[Implementációs részletek]
 = overview
-C++, CMake
-= Lineáris algebra
+#todo("pár mondat az eszközökről")
+
+C++, CMake, Eigen
 
 = Polinom osztály
 A polinomok szimbolikus reprezentációjához és manipulációjához létrehoztam a `Polynomial` osztályt.
@@ -759,12 +818,12 @@ illetve az operátor precedencia miatt a hatványozást szimbolizáló `^` jel h
 
 A `Polynomial` osztályra az alábbi függvények definiáltak:
 
-=== Aritmetikai műveletek
+*Aritmetikai műveletek*
 - összeadás
 - kivonás
 - szorzás
 
-=== Kiértékelés
+*Kiértékelés* \
 Az `evaluate` függvény változó-érték párosok listáját várja
 (pontosabban `std::initializer_list` )
 majd tagonként, a `PowerPermutation`-ökbe behelyettesítve értékel ki.
@@ -773,7 +832,7 @@ Például
   double result = p.evaluate<double>({{x, 3.0}, {y, -1.0}});
 ```
 
-=== Derivált
+*Derivált* \
 A `derivative` függvény egy változót vár, majd az adott változó szerinti deriváltat adja vissza.
 Van egy alternatív verziója, ami változók listáját fogadja el,
 majd a deriváltakat egy ennek megfelelő `std::vector`-ban adja vissza.
@@ -871,14 +930,16 @@ Ezek az eredmények mind megfelelnek bizonyos alapvető elvárásoknak
 de adott esetben komolyabb esztétikai hibák és nem kívánt anomáliák jelenhetnek meg.
 
 A legfőbb ezek közül az amikor élek jelennek meg a felületen,
-az egy vonal mentén hirtelen megfordulnak.
+a felület egy vonal mentén hirtelen megfordul.
 Ilyen lehet egyrészt a patchek találkozásánál
-(maguk a patchek külön-külön simák, de a határokon ellentétes irántba tartanak)
+(maguk a patchek külön-külön simák, de a határokon ellentétes irányba tartanak)
 de akár a patcheken belül is.
 
-#todo_image("élek")
-
-#todo_image("izotróp térben élek nélkül")
+#figure(
+  image("images/isotropic.png", width: 70%),
+  caption: [az izotróp térben sima a felület, de a primális térben nem feltétlenül],
+  numbering: none
+)
 
 = Végponti deriváltak
 
@@ -889,9 +950,17 @@ Ezzel szemben a kicsi szorzó hatására a felület "merev" lesz.
 Az adatpontok környékén lapos, a pont-normálvektor pár által meghatározott síkot közelíti.
 A lapok találkozásánál pedig szintén élek alakulnak ki.
 
-#todo_image("magas szorzó")
+#figure(
+  image("images/highmul.png", width: 70%),
+  caption: [nagy derivált az izotróp térben],
+  numbering: none
+)
 
-#todo_image("alacsony szorzó")
+#figure(
+  image("images/lowmul.png", width: 70%),
+  caption: [kicsi derivált],
+  numbering: none
+)
 
 Nem muszáj ragaszkodnunk az interpolálandó deriváltak irányát meghatározó heurisztikához sem.
 A vektorok egy adott síkon belül (melynek normálvektora a folyamat során kiszámolt $vc(v)$)
@@ -925,7 +994,11 @@ Itt a patchek tesznek egy kanyart a határgörbe közelében, és "fordítva" é
 
 Érdemes ezért az adatpontokat úgy eltolni, hogy az origó a közepükön legyen.
 
-#todo_image("távoli")
+#figure(
+  image("images/offcenter.png", width: 70%),
+  caption: [az origó a sötétkék sarkon van],
+  numbering: none
+)
 
 == Skálázás
 Még egy egyszerű transzformáció az arányos skálázás,
@@ -939,22 +1012,32 @@ a határgörbék egyre inkább kitérnek az origó irányába.
 A lefele skálázás szépen kiegyenesíti a határgörbéket,
 azonban a patchek határai környékén éleket alakíthat ki.
 
-#todo_image("élek")
+#figure(
+  image("images/highscale.png", width: 70%),
+  caption: [a nagy deriváltat nagy skálázással kompenzáljuk],
+  numbering: none
+)
 
-#todo_image("kifeszítve")
+#figure(
+  image("images/lowscale.png", width: 70%),
+  caption: [jelentősen csökkentettük a skálázást, az élek egy kicsit rosszabbak lettek],
+  numbering: none
+)
 
-#todo_image("kicsi skála")
+// == Forgatás
 
-== Forgatás
+= Végeredmény megfelelő paraméterekkel
+#figure(
+  image("images/ideal.png", width: 70%),
+  // caption: [],
+  numbering: none
+)
 
-== Irányvektorok állítása előzetes transzformálás helyett
-
-== Példa
-
-#chapter[Végszó]
-
+#chapter[Tanulságok]
+#todo("megírni")
 = Módszer megítélése
 
 = További kutatás
 
-#bibliography("works.yml", style: "elsevier-vancouver", title: [Hivatkozások], full: true)
+#set heading(offset: 0)
+#bibliography("works.yml", style: "elsevier-vancouver", full: true)

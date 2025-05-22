@@ -117,7 +117,7 @@ int main()
 
     to_obj("out/data.obj", p, n);
 
-    double scale = 5.;
+    double scale = 0.25;
 
     V<3> center =  p[1, 1];
     for (auto [i, j] : range(p)) {
@@ -138,7 +138,7 @@ int main()
         std::array<PD, 3> c = fi::calculate_coons(interp, u, v);
         auto [x, n] = fi::from_isotropic_coons(c, u, v);
 
-        size_t res = 10;
+        size_t res = 40;
 
         grid<V<3>> c_val{res + 1, res + 1};
         grid<V<3>> x_val{res + 1, res + 1};
