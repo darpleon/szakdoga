@@ -218,15 +218,80 @@ $
 
 == Interpoláció
 
+#todo_image("régi kép")
+
+#todo_image("mégegy")
+
 = PH térgörbék
-== Alapok
-== Reprezentáció kvaterniókkal
 == Interpoláció
+
+#todo_image("régi (kamu) kép")
 
 #chapter[PN felületek]
 
+"Pythagorean-Normal" (PN) felületnek hívjuk azokat az $vc(x)(u, v)$ polinomiális/racionális parametrikus felületeket,
+melyekre teljesül, hogy az alábbi kifejezésben
+$
+  lr(|| dd(vc(x), u) times dd(vc(x), v) ||)^2 = sigma^2
+$
+$sigma$ polinomiális/racionális.
+
+Ez azt jelenti, hogy az egységhosszúságú normálvektor is racionális
+$
+  vc(n)(u, v) = (dd(vc(x), u) times dd(vc(x), v)) / sigma
+$
+Tehát az offsetek is azok
+$
+  vc(x)_d(u, v) = vc(x) + d vc(n)
+$
+
+= PN felületek kutatása
+
+A PH sík- és térgörbékkel ellentétben,
+a PN felületek generálására nem létezik egyszerű, általános módszer.
+A téma aktív kutatás alatt áll, számos különböző megközelítés áll versenyben.
+
+Ezek közül pár fontosabb:
+
+- *PN felület mint érintősíkok burkolófelülete @pottman*\
+  Ez volt az első javaslat PN felületek előállítására.
+  A felületek duális reprezentációját használja, Bézier alakban.
+
+- *Másodfokú háromszögalapú Bézier foltok @bezierpatch*\
+  A Bézier foltok (Bézier-patch) már korábban is elterjedtek voltak a számítógépes grafikában.
+  Ez a cikk bemutatja, hogy a síkba torzítás nélkül nem lapítható (non-developable)
+  Bézier foltok mind PN felületek, és ad egy algoritmust az ofszetjeik kiszámítására.
+
+- *Polinomiális PN felületek kvaterniókkal @quaternion*\
+  A duális reprezentációt használó módszerek hátránya, hogy a polinomiálisnál bonyolultabb racionális felületeket állítanak elő.
+  Az itteni megoldás a PH térgörbék mintájára, kvaterniók használatával generál polinomiális PN felületeket.
+
+- *PN interpoláció a duális tér izotróp modelljével @smooth*\
+  A cikk módszert ad téglalaprácsban megadott pont-normálvektor adatok interpolálására.
+  A duális reprezentációra építve bevezeti az izotróp teret,
+  ami kényelmesebb interpolálást tesz lehetővé.
+
+- *Polinomiális és lokális módszer $bold(upright(G^1))$ folytonosságú PN splinera @direct*\
+  Háromszögháló alapú PN interpoláció számos kedvező tulajdonsággal.
+  
+- *PN minimálfelületek @minimal*\
+  Izoterm paraméterezésű minimálfelületek előállítása pitagoraszi komplex polinomhármasokkal,
+  melyek rendelkeznek a PN tulajdonsággal.
+
+A továbbiakban Lávička et al. módszerét (izotróp tér) fogom feldolgozni.
+Kifejtem az egyes lépések matematikai hátterét.
+Dokumentálom a módszer szoftveres implementációját,
+illetve az elért eredményeket.
+
 #chapter[PN interpoláció $C^1$ folytonossággal]
-= Feladat
+Lávičkáék módszere egy pont-normálvektor párosokból álló négyzetrács alakú hálózatból indul ki.
+Eredményül pedig négyzet alakú felület-foltok (patch) hálózatát adja,
+melyek interpolálnak a pontok és normálvektorok között,
+illetve egymáshoz $C^1$ folytonossággal illeszkednek.
+
+A kreálandó felületet $vc(x)(u, v)$-nek hívjuk,
+illetve a tömörebb szintaxis érdekében az ($u, v$) párost egy vektorba összevonva $vc(x)(vc(s))$-nek.
+
 = Duális reprezentáció
 Egy olyan $vc(x)(vc(s))$ racionális felületet keresünk,
 melynek egységhosszúságú normálvektorait leíró $vc(n)(vc(s))$ függvény szintén racionális.
@@ -888,6 +953,8 @@ azonban a patchek határai környékén éleket alakíthat ki.
 
 #chapter[Végszó]
 
-== Módszer megítélése
+= Módszer megítélése
 
-== További kutatás
+= További kutatás
+
+#bibliography("works.yml", style: "elsevier-vancouver", title: [Hivatkozások], full: true)

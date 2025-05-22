@@ -1,0 +1,73 @@
+pottman:
+    type: Article
+    title: Rational curves and surfaces with rational offsets
+    author: Pottman, Helmut
+    page-range: 175-192
+    date: 1995
+    parent:
+        type: Periodical
+        title: Computer Aided Geometric Design
+        volume: 12
+        issue: 2
+        
+bezierpatch:
+    type: Article
+    title: Computing exact rational offsets of quadratic triangular Bezier surface patches
+    author: ["Bohumír Bastl", "Bert Jüttler", "Jiří Kosinka", "Miroslav Lávička"]
+    page-range: 197-209
+    date: 2008
+    parent:
+        type: Periodical
+        title: Computer-Aided Design
+        volume: 40
+        issue: 2
+        
+smooth:
+    type: Article
+    title: Smooth surface interpolation using patches with rational offsets
+    author: ["Miroslav Lávička", "Zbyněk Šír", "Jan Vršek"]
+    page-range: 75-85
+    date: 2016
+    parent:
+        type: Periodical
+        title: Computer Aided Geometric Design
+        volume: 48
+
+quaternion:
+    type: Article
+    title: A quaternion approach to polynomial PN surfaces
+    author: ["Jernej Kozak", "Marjeta Krajnc", "Vito Vitrih"]
+    page-range: 172-188
+    date: 2016
+    parent:
+        type: Periodical
+        title: Computer Aided Geometric Design
+        volume: 47
+
+direct:
+    type: Article
+    title: A direct and local method for computing polynomial Pythagorean-normal patches with global G1 continuity
+    author: ["Michal Bizzarri", "Miroslav Lávička", "Jan Vršek", "Jiří Kosinka"]
+    page-range: 44-51
+    date: 2018
+    parent:
+        type: Periodical
+        title: Computer-Aided Design
+        volume: 102
+
+minimal:
+    type: Article
+    title: On the construction of polynomial minimal surfaces with Pythagorean normals
+    author: ["Rida T. Farouki", "Marjeta Knez", "Vito Vitrih", "Emil Žagar"]
+    date: 2022
+    parent:
+        type: Periodical
+        title: Applied Mathematics and Computation
+        volume: 435
+
+pythag:
+  type: Book
+  title: "Pythagorean-Hodograph Curves: Algebra and Geometry Inseparable"
+  author: "Rida T. Farouki"
+  date: 2008
+  publisher: Springer Berlin, Heidelberg
