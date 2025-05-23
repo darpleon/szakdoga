@@ -3,6 +3,7 @@
 #include "grid.hpp"
 #include "basic_implementation.hpp"
 #include "io.hpp"
+#include <eigen3/Eigen/Geometry>
 #include <iostream>
 
 namespace ni = numeric_implementation;
@@ -119,15 +120,22 @@ int main()
 
     double scale = 0.25;
 
-    V<3> center =  p[1, 1];
+    double ang = 2.5;
+
+    Eigen::AngleAxisd rot{ang, V<3>::UnitY()};
+    Eigen::AngleAxisd irot{-ang, V<3>::UnitY()};
+
+    V<3> center = p[1, 1];
     for (auto [i, j] : range(p)) {
-        p[i, j] = scale * (p[i, j] - center);
+        p[i, j] = rot * (scale * (p[i, j] - center));
+        n[i, j] = rot * n[i, j];
     }
 
     grid<M<6, 2>> interp_data = ni::calculate_interp(p, n);
 
     std::vector<grid<V<3>>> isotropic_patches;
     std::vector<std::array<grid<V<3>>, 2>> patches;
+    std::vector<std::array<grid<V<3>>, 2>> offset_patches;
     for (auto [i, j] : range2d{2, 2}) {
         M<12, 4> interp;
         interp << interp_data[i + 0, j + 0], interp_data[i + 0, j + 1],
@@ -140,6 +148,7 @@ int main()
 
         size_t res = 40;
 
+        double d = -0.0;
         grid<V<3>> c_val{res + 1, res + 1};
         grid<V<3>> x_val{res + 1, res + 1};
         grid<V<3>> n_val{res + 1, res + 1};
@@ -149,19 +158,22 @@ int main()
             double v_val = ni::ddivide(j, res);
             for(size_t k = 0; k < 3; ++k) {
                 c_val[i, j][k] = c[k].evaluate<double>({{u, u_val}, {v, v_val}});
-                x_val[i, j][k] = center[k] + x[k].evaluate<double>({{u, u_val}, {v, v_val}}) / scale;
+                x_val[i, j][k] = x[k].evaluate<double>({{u, u_val}, {v, v_val}});
                 n_val[i, j][k] = n[k].evaluate<double>({{u, u_val}, {v, v_val}});
             }
+            x_val[i, j] = center + irot * x_val[i, j] / scale;
+            n_val[i, j] = irot * n_val[i, j];
         }
 
         patches.push_back({std::move(x_val), std::move(n_val)});
         isotropic_patches.push_back(std::move(c_val));
     }
 
-    to_obj("out/x_iso_poly.obj", isotropic_patches);
+    // to_obj("out/x_iso_poly.obj", isotropic_patches);
     to_obj("out/x_poly_derived.obj", patches);
-    to_obj("out/x00.obj", patches[0][0], patches[0][1]);
-    to_obj("out/x10.obj", patches[2][0], patches[2][1]);
+    // to_obj("out/x_poly_offset.obj", offset_patches);
+    // to_obj("out/x00.obj", patches[0][0], patches[0][1]);
+    // to_obj("out/x10.obj", patches[2][0], patches[2][1]);
 
 
     return 0;

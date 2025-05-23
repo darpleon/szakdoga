@@ -516,7 +516,6 @@ Legyen továbbá $n$ és $m$ a legmagasabb $i$, illetve $j$ index.
 Jelölje $vc(gamma)_(i, j)$ a felület $u$ szerinti deriváltját az $vc(a)_(i, j)$ pontban,
 $vc(delta)_(i, j)$ pedig a $v$ szerinti deriváltat ugyanitt.
 
-// TODO: egy kis szóbeli magyarázat?
 Ha $vc(a)_(i, j)$-nek csak egy szomszédja van, vegyük a köztük lévő vektort
 #centered_split(
   $
@@ -579,7 +578,6 @@ $
   vc(S)_d (u, v) &= F_0(u) vc(d)_0(v) + F_1(u) vc(d)_1(v)
 $
 
-// TODO: ez általános esetben is ilyen egyszerű?
 A harmadik pedig interpolál a sarokpontok között
 $
   vc(B) (u, v) &= F_0(u)F_0(v) vc(a)_00 +
@@ -665,7 +663,6 @@ $
 = Visszatranszformálás, az eredmény fokszáma
 Az $vc(y)$ izotróp térből primális térbe transzformálásához szükséges műveleteket
 a fejezet korábbi pontjaiban már ismertettük.
-// TODO: hivatkozás?
 Viszont gyakorlati megfontolások miatt érdemes ezeket tovább alakítani,
 hogy a módszert végrehajtó programunk hatékonyabban tudjon futni.
 
@@ -693,10 +690,6 @@ Ez azt jelenti, hogy ha visszatranszformálást először "kézzel" átalakítju
 észreveszünk és kihasználunk néhány azonosságot,
 akkor sokkal hatékonyabb kódot tudunk írni.
 
-// Vegyük tehát $vc(x)$ 4.2-es pontban leírt képletét
-// $
-// vc(x) = h vc(n) + dd(vc(n), vc(s)) (dd(vc(n), vc(s))^T dd(vc(n), vc(s)))^(-1) dd(h, vc(s))^T \
-// $
 Vegyük $vc(y)$ transzformációját a Blaschke-hengerre
 #centered_split(distance: 50%,
   $
@@ -719,15 +712,6 @@ Ezzel $vc(x)$ első komponensét le is tudhatjuk
 $
   vc(x) = h vc(n) + nabla = (k vc(m)) / q^2 + nabla
 $
-// A deriváltakat szorzatként fejezzük ki:
-// #centered_split(distance: 30%,
-//   $
-//   dd(vc(n), vc(s)) = dd(vc(n), vc(y)) dd(vc(y), vc(s)) \
-//   $,
-//   $
-//   dd(h, vc(s)) = dd(h, vc(y)) dd(vc(y), vc(s)) \
-//   $,
-// )
 A deriváltak
 #centered_split(distance: 30%,
   $
@@ -973,6 +957,15 @@ Lehetséges továbbá több patchet egyszerre, ugyanabba a fájlba írni.
 Ez esetben a program a patcheket külön group-okba rakja a fájlon belül.
 Az obj fájlok megjelenítésére sok alkalmazás képes, én a ParaView-t használtam.
 
+= 2D demo
+Létrehoztam a Geogebra alkalmazásban egy interaktív demót a módszer egy leegyszerűsített verziójára,
+ahol egy görbét interpolálunk két pont és normálvektor között a síkban.
+
+#figure(
+  image("images/smooth2d.png", width: 70%),
+  caption: [Interpoláció és offset 2D-ben]
+)
+
 #chapter[Eredmények]
 
 = Szabad paraméterek
@@ -987,6 +980,11 @@ a felület egy vonal mentén hirtelen megfordul.
 Ilyen lehet egyrészt a patchek találkozásánál
 (maguk a patchek külön-külön simák, de a határokon ellentétes irányba tartanak)
 de akár a patcheken belül is.
+
+#figure(
+  image("images/cusp2d.png", width: 70%),
+  caption: [Egy él a 2D demóban]
+)
 
 #figure(
   image("images/isotropic.png", width: 70%),
@@ -1071,19 +1069,49 @@ azonban a patchek határai környékén éleket alakíthat ki.
   caption: [jelentősen csökkentettük a skálázást, az élek egy kicsit rosszabbak lettek]
 )
 
-// == Forgatás
+== Forgatás
+
+A Blaschke hengerről a $vc(w) = (0, 0, 1, 0)$ pontból vetítünk az izotróp térbe.
+Ez azt jelenti, hogy a $(0, 0, 1)$ normálvektort nem tudjuk reprezentálni,
+és minél közelebb kerülünk hozzá, annál kaotikusabb lesz a felület.
+
+Érdemes tehát úgy orientálni az adatpontokat,
+hogy a normálvektorok a lehető legtávolabb legyenek $vc(w)$-től.
+Segít, ha egymáshoz közel vannak.
+
+#figure(
+  image("images/rotated.png", width: 70%),
+  caption: [adatpontjainkat megdöntöttük a $vc(w)$ irányába, a felület próbálja kikerülni]
+)
 
 = Végeredmény megfelelő paraméterekkel
+A paraméterek óvatos megválasztásával létre tudunk hozni egy felületet,
+ami megfelel az esztétikai elvárásainknak.
 #figure(
   image("images/ideal.png", width: 70%),
   caption: []
 )
 
-#chapter[Tanulságok]
-#todo("megírni")
-= Módszer megítélése
+#figure(
+  image("images/withoffset.png", width: 70%),
+  caption: [felület és offsetje]
+)
 
-= További kutatás
+= Ítélet
+A pont-normálvektor hálózat PN interpolálása egy nagyszerű eredmény,
+azonban a módszernek komoly limitációi vannak.
+Bár a felület különálló patchekből áll,
+bizonyos szempontból mégiscsak egy egységként kell rá tekinteni,
+hisz egy patch viselkedése függ a többihez viszonyított pozíciójától/orientációjától/stb.
+Ez kifejezetten körülményessé,
+adott esetben akár lehetetlenné teszi az anomáliák elkerülését,
+ami szükséges a gyakorlati felhasználáshoz.
+
+A módszer mindenképp további kutatást érdemel.
+Egyrészt lehetne további heurisztikákat fejleszteni,
+hogy jobb eséllyel kapjunk szép eredményt tetszőleges ponthálózatra.
+Másrészt jó lenne módot találni arra,
+hogy egy valódi lokális kontrollal rendelkező spline-t kapjunk.
 
 #set heading(offset: 0)
 #bibliography("works.yml", style: "elsevier-vancouver", full: true)

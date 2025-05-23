@@ -2,6 +2,8 @@
 
 /*#include <sstream>*/
 #include <fstream>
+#include <print>
+#include <iostream>
 
 void print_obj_vertices(std::ostream& stream, const grid<V<3>>& vertices)
 {
@@ -122,4 +124,5 @@ void to_obj(std::string filename, const std::vector<std::array<grid<V<3>>, 2>>& 
     output << vertex_stream.rdbuf() << '\n';
     output << normal_stream.rdbuf() << '\n';
     output << face_stream.rdbuf();
+    // std::cout << face_stream.rdbuf();
 }
