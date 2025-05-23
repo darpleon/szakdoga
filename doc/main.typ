@@ -9,9 +9,7 @@
   digital: true
 )
 
-//#chapter(numbering: none)[Kivonat]
-
-#chapter[Bevezetés]
+#chapter(numbering: none)[Kivonat]
 A számítógépek elterjedésével megjelent az iparban a
 "Computer-Aided Design" (CAD) és "Computer-Aided Machining" (CAM) fogalma.
 Ezek grafikus szoftverfelületek, melyek lehetővé teszik ipari alkatrészek,
@@ -40,7 +38,35 @@ melyet Lávička et al. fogalmazott meg 2016-ban @smooth.
 Kifejtem az egyes lépések mögötti matematikát.
 Beszámolok a módszer szoftveres implementációjáról, illetve az elért eredményekről.
 
-#pagebreak()
+#chapter(numbering: none)[Abstract]
+With the spread of computers,
+the concepts of "Computer-Aided Design" (CAD) and "Computer-Aided Machining" (CAM) emerged in industry.
+These are graphical software interfaces that enable the digital design
+of industrial parts, consumer products, or even buildings,
+as well as their digitally controlled manufacturing (Computer Numerical Control - CNC).
+To facilitates this, certain branches of applied mathematics, such as numerical analysis,
+were developed,  and continue to evolve to this day.
+
+The fundamental tools of CAD/CAM systems are polynomial/rational interpolation,
+and the parametric curves/surfaces built upon it.
+This paper aims to shed light on a special subclass of these:
+the so-called "Pythagorean-hodograph" (PH) curves and "Pythagorean-normal" (PN) surfaces.
+Due to their unique properties,
+PH curves and PN surfaces simplify the creation of "offsets" (parallel curves/surfaces).
+
+The pioneer of PH curves is Rida T. Farouki,
+who introduced the concept in 1990 and has been actively working in the field ever since.
+In 1995, the area was expanded to include PN surfaces, the surface equivalent of PH curves,
+in a paper by Helmut Pottmann.
+
+In the first few chapters of this paper, I will present the motivations behind PH/PN,
+and introduce the fundamentals of the theory of Pythagorean curves/surfaces.
+Following this, I will detail a specific method for the interpolation of PN surfaces,
+formulated by Lávička et al. in 2016.
+I will explain the mathematics behind each step.
+I will also report on the software implementation of the method and the results achieved.
+
+#chapter[Bevezetés]
 
 = Polinomok, racionális függvények
 Amikor geometriai alakzatokat szeretnénk szoftveresen reprezentálni,
@@ -103,7 +129,10 @@ Kifejezetten népszerű a harmadfokú Bézier görbe a graphic design területé
 hiszen egyszerűen lehet állítani a görbe irányait a végpontokban.
 #figure(
   image("images/bezier.png", width: 70%),
-  caption: [egy harmadfokú Bézier görbe kontrollpontjaival (forrás: Wikipédia)]
+  caption: [
+    egy harmadfokú Bézier görbe kontrollpontjaival
+    (forrás: Wikipédia #footnote[https://en.wikipedia.org/wiki/B%C3%A9zier_curve])
+  ]
 )
 
 == B-Spline
@@ -127,7 +156,10 @@ Mivel ez nem okoz gondot az első és utolsó kontrollpontban,
 ott gyakran megteszik (clamping).
 #figure(
   image("images/bsbasis.png", width: 70%),
-  caption: [negyedfokú B-Spline bázis (forrás: MIT)]
+  caption: [
+    negyedfokú B-Spline bázis (forrás: MIT)
+    #footnote[https://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node17.html]
+  ]
 )
 
 
@@ -850,7 +882,6 @@ Egy példa polinom-konstrukció
 A C++ szintaxisából adódó limitáció, hogy a szorzásjelet nem lehet elhagyni,
 illetve az operátor precedencia miatt a hatványozást szimbolizáló `^` jel használatatakor zárójelezni kell.
 
-// TODO: kicsit sok a szám
 == Funkcionalitás
 
 A `Polynomial` osztályra az alábbi függvények definiáltak:
